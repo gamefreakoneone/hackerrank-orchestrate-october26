@@ -11,7 +11,7 @@ spec whose dependencies are not `Completed`.
 | 0004 | [serializer-validator](specs/0004-serializer-validator/) | Completed | 0003 | Deterministic output writer and a hard validator for every output rule. |
 | 0005 | [scorer-and-split](specs/0005-scorer-and-split/) | Completed | 0004 | Grader-replica scorer, frozen dev/holdout split, baseline numbers. |
 | 0006 | [identity-resolution](specs/0006-identity-resolution/) | Completed | 0003 | Resolve the subject and every identifier valid at or before audit_at. |
-| 0007 | [evidence-parsers](specs/0007-evidence-parsers/) | Not started | 0003, 0006 | Parse every non-image evidence file once into Observations with an inverted index. |
+| 0007 | [evidence-parsers](specs/0007-evidence-parsers/) | Completed | 0003, 0006 | Parse every non-image evidence file once into Observations with an inverted index. |
 | 0008 | [llm-provider-layer](specs/0008-llm-provider-layer/) | Not started | 0001 | Single structured-call layer for Jev, Azure (Strands) and Gemini (Strands) with cache and usage ledger. |
 | 0009 | [vision-extraction](specs/0009-vision-extraction/) | Not started | 0007, 0008 | Turn the 11 PNG screenshots into Observations. |
 | 0010 | [discovery-and-state](specs/0010-discovery-and-state/) | Not started | 0006, 0007 (0009 optional) | Find every resource relevant to the subject and its state at audit_at. |

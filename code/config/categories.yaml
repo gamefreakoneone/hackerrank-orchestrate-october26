@@ -1,0 +1,125 @@
+# Data, not code: how evidence containers, record types and log events map to logical systems and
+# deletion_rules.csv data categories (TECHNICAL_DESIGN §5 Q1). "DATA_FLOW" is the connector category.
+
+resource_prefix_system:
+  account: account_service
+  search: search_service
+  support: support_platform
+  analytics: analytics_platform
+  export: export_service
+  data_flow: integration_service
+  backup: backup_service
+  tombstone: identity_service
+  audit_record: security_service
+  legal_hold: legal_service
+  cache: cache_service
+  email_delivery: email_service
+  object: object_storage
+  marketing: marketing_platform
+
+# table / collection name -> category (system comes from the row/origin or the resource prefix)
+container_category:
+  customer_profiles: USER_PROFILE
+  customer_search_documents: SEARCH_INDEX_ENTRY
+  search_documents: SEARCH_INDEX_ENTRY
+  support_conversations: SUPPORT_MESSAGE
+  support_records: SUPPORT_MESSAGE
+  tickets: SUPPORT_MESSAGE
+  ticket_attachments: SUPPORT_ATTACHMENT
+  customer_analytics_reports: ANALYTICS_PROFILE
+  customer_analytics_profiles: ANALYTICS_PROFILE
+  profiles: ANALYTICS_PROFILE
+  customer_export_jobs: USER_EXPORT
+  customer_exports: USER_EXPORT
+  exports: USER_EXPORT
+  backup_catalog: BACKUP_ARCHIVE
+  backup_restore_entries: BACKUP_ARCHIVE
+  restore_entries: BACKUP_ARCHIVE
+  connector_configurations: DATA_FLOW
+  connector_subscriptions: DATA_FLOW
+  connectors: DATA_FLOW
+  security_audit_events: SECURITY_AUDIT_LOG
+  security_audit_records: SECURITY_AUDIT_LOG
+  audit_records: SECURITY_AUDIT_LOG
+  retained_order_records: LEGAL_HOLD_RECORD
+  deleted_customer_references: ACCOUNT_TOMBSTONE
+  profile_lookups: USER_PROFILE
+  index_queries: SEARCH_INDEX_ENTRY
+
+# inventory capture tables (customer_data_inventory_capture): table -> origin system named in snapshot_scope
+inventory_table_system:
+  customer_profiles: account_service
+  customer_search_documents: search_service
+  customer_analytics_profiles: analytics_platform
+  support_records: support_platform
+  customer_exports: export_service
+  connector_subscriptions: integration_service
+  backup_restore_entries: backup_service
+  security_audit_records: security_service
+
+# generic customer_data_* stores: collections known per origin system (coverage is emitted even with 0 rows)
+generic_store_collections:
+  account_service: [customer_profiles]
+  analytics_platform: [customer_analytics_reports]
+  backup_service: [backup_catalog]
+  export_service: [customer_export_jobs]
+  identity_service: [deleted_customer_references]
+  integration_service: [connector_configurations]
+  legal_service: [retained_order_records]
+  search_service: [customer_search_documents]
+  security_service: [security_audit_events]
+  support_platform: [support_conversations, ticket_attachments]
+
+# log event name -> category
+log_event_category:
+  profile_lookup_started: USER_PROFILE
+  profile_lookup_completed: USER_PROFILE
+  index_query_started: SEARCH_INDEX_ENTRY
+  index_query_completed: SEARCH_INDEX_ENTRY
+  message_scan_started: SUPPORT_MESSAGE
+  message_pii_scan: SUPPORT_MESSAGE
+  message_read: SUPPORT_MESSAGE
+  support_ticket_read_started: SUPPORT_MESSAGE
+  support_ticket_read_completed: SUPPORT_MESSAGE
+  attachment_scan_started: SUPPORT_ATTACHMENT
+  attachment_pii_scan: SUPPORT_ATTACHMENT
+  analytics_profile_scan_started: ANALYTICS_PROFILE
+  analytics_identity_scan: ANALYTICS_PROFILE
+  analytics_profile_read: ANALYTICS_PROFILE
+  analytics_profile_read_started: ANALYTICS_PROFILE
+  analytics_profile_read_completed: ANALYTICS_PROFILE
+  contact_lookup_completed: MARKETING_PROFILE      # analytics contact list with email_opt_in (gold case_12: DELETE)
+  contact_query_started: SECONDARY_IDENTIFIER       # support legacy_contact_index replica (gold case_10: DELETE)
+  contact_query_completed: SECONDARY_IDENTIFIER
+  deletion_marker_check: SECONDARY_IDENTIFIER
+  connector_heartbeat: DATA_FLOW
+  connector_config_loaded: DATA_FLOW
+  connector_config_read_started: DATA_FLOW
+  connector_config_read_completed: DATA_FLOW
+  restore_policy_check_started: BACKUP_ARCHIVE
+  restore_policy_read_started: BACKUP_ARCHIVE
+  restore_policy_read_completed: BACKUP_ARCHIVE
+  restore_candidate_evaluated: BACKUP_ARCHIVE
+  restore_authorization_completed: BACKUP_ARCHIVE
+  audit_record_query_started: SECURITY_AUDIT_LOG
+  audit_record_read_started: SECURITY_AUDIT_LOG
+  audit_record_read_completed: SECURITY_AUDIT_LOG
+  export_metadata_read_started: USER_EXPORT
+  export_metadata_read_completed: USER_EXPORT
+  export_download_check_started: USER_EXPORT
+  export_download_check_completed: USER_EXPORT
+  retained_order_query_started: LEGAL_HOLD_RECORD
+  retained_order_loaded: LEGAL_HOLD_RECORD
+  thumbnail_failed: SUPPORT_ATTACHMENT
+
+# PDF document title (first line) -> category
+pdf_title_category:
+  DELIVERY ADDRESS CORRECTION REQUEST: SUPPORT_ATTACHMENT
+  DISPUTED ORDERS AND TAX RECORDS REGISTER: LEGAL_HOLD_RECORD
+  COMPLIANCE JOURNAL - SIGNED RECORD EXTRACT: SECURITY_AUDIT_LOG
+
+# fields whose values are booleans written as true/false, 1/0
+boolean_fields: [enabled, restore_allowed, download_available, eligible, deletion_block, email_opt_in, marker_found]
+
+# fields holding a person's name (exact-match identifiers; never matched by substring)
+name_fields: [full_name, display_name, requester_name, name, customer_name]
