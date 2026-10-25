@@ -1,0 +1,3 @@
+audit_id,user_id,event_time,field_name,old_value,new_value
+audit_9001,user_9001,2026-08-01T10:00:00Z,email,elin.s.old@example.net,elin.strand@example.net
+audit_9002,user_9001,2026-08-01T10:00:00Z,email_hash,6c954cd8eeebf24c5dba5a86007638c92fcd8a04e452589e2b576637b4df98eb,41ddcccc7934263ee9579c6e0e8874176ae85d76c0dec8a70504d34d289a5588

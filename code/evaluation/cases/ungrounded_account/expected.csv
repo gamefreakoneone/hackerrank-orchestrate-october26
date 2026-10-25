@@ -1,0 +1,2 @@
+case_id,deletion_status,steps_json
+case_9008,INCOMPLETE,"[{""evidence_id"":"""",""operation"":""VERIFY_RECORD_REDACTED"",""phase"":""VERIFICATION"",""resource_id"":""support_9008"",""state"":""REDACTED"",""step_no"":1,""system_id"":""support_platform""}]"

@@ -1,0 +1,33 @@
+{
+  "exported_at": "2026-10-05T11:00:00Z",
+  "region": "eu-west-1",
+  "service_exports": {
+    "identity_service": {
+      "deleted_customer_references": [
+        {
+          "resource_id": "tombstone_9004",
+          "subject_reference": "user_9004",
+          "name": "Ines Varga",
+          "email": "ines.varga@example.net",
+          "phone": null,
+          "email_hash": null,
+          "account_status": "DELETED",
+          "observed_at": "2026-10-05T10:00:00Z"
+        }
+      ]
+    },
+    "integration_service": {
+      "connectors": [
+        {
+          "resource_id": "data_flow_9004",
+          "connector_name": "crm_contact_sync",
+          "customer_email": "ines.varga@example.net",
+          "customer_reference": null,
+          "enabled": true,
+          "last_delivery_status": "delivered",
+          "observed_at": "2026-10-05T10:05:00Z"
+        }
+      ]
+    }
+  }
+}

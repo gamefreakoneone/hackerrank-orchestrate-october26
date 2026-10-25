@@ -1,0 +1,29 @@
+{
+  "exported_at": "2026-10-05T11:00:00Z",
+  "region": "eu-west-1",
+  "service_exports": {
+    "backup_service": {
+      "restore_entries": [
+        {
+          "resource_id": "backup_9005",
+          "customer_reference": "user_9005",
+          "customer_email": null,
+          "archive_key": "archive/customer-data/backup_9005.tar.zst",
+          "restore_allowed": false,
+          "observed_at": "2026-10-05T10:00:00Z"
+        }
+      ]
+    },
+    "security_service": {
+      "audit_records": [
+        {
+          "resource_id": "audit_record_9005",
+          "subject_reference": "user_9005",
+          "event_code": "ACCOUNT_DELETION_RECORDED",
+          "retention_until": "2032-12-31T23:59:59Z",
+          "observed_at": "2026-10-05T10:10:00Z"
+        }
+      ]
+    }
+  }
+}

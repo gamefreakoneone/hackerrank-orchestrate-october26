@@ -1,0 +1,2 @@
+case_id,deletion_status,steps_json
+case_9006,INCOMPLETE,"[{""evidence_id"":"""",""operation"":""VERIFY_RECORD_ABSENT"",""phase"":""VERIFICATION"",""resource_id"":""account_9006"",""state"":""ABSENT"",""step_no"":1,""system_id"":""account_service""}]"

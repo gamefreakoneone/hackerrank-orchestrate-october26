@@ -1,0 +1,9 @@
+{
+ "case_9002": {
+  "absent": [
+   "ACCOUNT_UNGROUNDED",
+   "UNKNOWN_STATE"
+  ],
+  "present": []
+ }
+}

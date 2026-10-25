@@ -1,0 +1,19 @@
+{
+  "exported_at": "2026-10-05T11:00:00Z",
+  "region": "eu-west-1",
+  "service_exports": {
+    "support_platform": {
+      "tickets": [
+        {
+          "resource_id": "support_9008",
+          "customer_reference": "user_9008",
+          "requester_name": null,
+          "requester_email": null,
+          "requester_phone": null,
+          "message_excerpt": "[REDACTED]",
+          "observed_at": "2026-10-05T10:00:00Z"
+        }
+      ]
+    }
+  }
+}

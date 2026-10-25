@@ -1,0 +1,3 @@
+file_id,file_path,origin,captured_at
+evidence_9003,evidence/logs/synthetic_readback_9003.log,service_readback_logs,2026-10-05T09:00:00Z
+evidence_9004,evidence/databases/synthetic_search_9004.sql,customer_search_primary_capture,2026-10-08T10:00:00Z

@@ -1,0 +1,10 @@
+{
+ "case_9004": {
+  "absent": [
+   "ACCOUNT_UNGROUNDED",
+   "UNKNOWN_STATE",
+   "POLICY_UNDEFINED"
+  ],
+  "present": []
+ }
+}
