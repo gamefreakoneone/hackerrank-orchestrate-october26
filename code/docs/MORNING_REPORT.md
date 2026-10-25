@@ -12,9 +12,10 @@ No time, call or spend limit was configured by the user or platform; none is ass
 
 | Spec | Status | Commit | Notes |
 |---|---|---|---|
-| 0001 | Completed | pending `spec 0001: scaffold, env template, stub main, provider smoke` | live smoke: jev OK, azure OK, gemini OK |
+| 0001 | Completed | `15c97a8` | live smoke: jev OK, azure OK, gemini OK |
 | 0002 | Completed (before this run) | `66e8559` and earlier | recon |
-| 0003–0016 | Not started | — | |
+| 0003 | Completed | pending `spec 0003: typed models and tz-aware loaders` | 7 tests |
+| 0004–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -47,9 +48,9 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0003.
+- Continue with spec 0004.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `5b977de` (pre-run).
+Last published checkpoint: `15c97a8` (spec 0001).
