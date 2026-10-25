@@ -11,6 +11,8 @@ This file adds OUR development workflow on top of AGENTS.md.
 
 ## Start of every session
 
+0. Sync first: `git pull --rebase origin <working branch>`. Only one agent (Claude Code, Codex, …)
+   works on the branch at a time; finish, commit and push before another agent starts.
 1. Follow AGENTS.md §0 (read it, log `SESSION START`).
 2. Read `code/docs/FEATURE_STATUS.md` to see what is done and what is next.
 3. If no spec folders exist yet, read `code/docs/HANDOFF.md` and run its Phase 0.
@@ -28,6 +30,12 @@ This file adds OUR development workflow on top of AGENTS.md.
 - Every spec from 0005 onward must record the scorer snapshot (status accuracy, step F1,
   sequence exact-match) on the dev split in `status.md`, before and after the change.
 - Commit each completed spec separately: `spec NNNN: <summary>`. Dated commits are evidence.
+- Every commit includes the current `log.txt` and `agent-trace/`.
+- Before the final reply of every session: run `scripts/save_trace.sh` (also wired as the Stop/SessionEnd
+  hook in `.claude/settings.json`; manual run: pipe `{"session_id":…,"transcript_path":…}` to it),
+  then commit and push.
+- `agent-trace/` lives at the repo root, never inside `code/`, so it stays out of `code.zip`. At the end it is
+  packaged separately as `agent-trace.zip` (see `agent_trace_instructions.md`).
 - Keep `code/README.md` current whenever setup, commands, or env vars change.
 - Preserve the Key Contracts in `code/docs/TECHNICAL_DESIGN.md` unless a spec explicitly changes them.
 
