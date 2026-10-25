@@ -21,8 +21,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0007 | Completed | `2cb0e29` | 3012 observations, 472 coverage rows |
 | 0008 | Completed | `c188935` | live: jev, azure, gemini OK |
 | 0009 | Completed | `04c26e4` | 23 PNG records; 8 unreachable resources not in PNGs |
-| 0010 | Completed (recall target not met, contract-bound) | pending `spec 0010: grounded discovery, account linkage and state` | linkage 12/32 (0 wrong); 167/518 grounded |
-| 0011–0016 | Not started | — | |
+| 0010 | Completed (recall target not met, contract-bound) | `f63f611` | linkage 12/32 (0 wrong); 167/518 grounded |
+| 0011 | Completed | pending `spec 0011: policy conditions and obligations` | 77/77 discovered gold obligations correct |
+| 0012–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -41,7 +42,7 @@ not committed). No audited output exists.
 
 | Provider | Live smoke (spec 0001) | Pipeline use |
 |---|---|---|
-| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | not wired yet |
+| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | category fallback hook live (0011); intent in 0013 |
 | Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK` = gpt-6-luna) | OK (needs `reasoning_effort=none` for function tools; temperature 0 accepted) | not wired yet |
 | Gemini via Strands (`GEMINI_VISION_MODEL` = gemini-3.8-flash) | OK (structured output, temperature 0) | PNG extraction live (0009), 11 calls cached |
 
@@ -62,10 +63,10 @@ not committed). No audited output exists.
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0011.
+- Continue with spec 0012.
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `04c26e4` (spec 0009).
+Last published checkpoint: `f63f611` (spec 0010).
