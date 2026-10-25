@@ -13,6 +13,8 @@ KV_RE = re.compile(r'([A-Za-z_][\w.]*)=("(?:[^"\\]|\\.)*"|\S+)')
 BRACKET_RE = re.compile(r"^\[(\w+)\] \[([^\]]+)\] \[([^\]]+)\] (\w+):\s?(.*)$")
 PIPE_RE = re.compile(r"^\|\s*(\w+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.*)$")
 TRACE_ID_RE = re.compile(r"^(?:tr|rb)-[\w-]+$")
+# infrastructure lines inside a trace (their result/status fields describe a cache or pool, not the record)
+NOISE_EVENTS = {"cache_lookup", "connection_acquired", "dependency_retry", "dependency_recovered"}
 
 
 def parse_kv(text: str) -> dict[str, str]:
@@ -65,7 +67,8 @@ def parse_log(file_id: str, captured_at: datetime, text: str) -> list[Observatio
             continue
         merged: dict[str, str | None] = {}
         for record in records:
-            merged.update({k: normalize_value(k, v) for k, v in record.items() if k != "ts"})
+            if record.get("event") not in NOISE_EVENTS:
+                merged.update({k: normalize_value(k, v) for k, v in record.items() if k != "ts"})
         events = [r["event"] for r in records if r.get("event")]
         merged["events"] = ",".join(events)
         merged["trace_group"] = group_key

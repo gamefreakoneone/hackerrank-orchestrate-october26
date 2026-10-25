@@ -20,8 +20,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0006 | Completed | `b22c8d9` | 518/518 resolved, 100 historical request emails |
 | 0007 | Completed | `2cb0e29` | 3012 observations, 472 coverage rows |
 | 0008 | Completed | `c188935` | live: jev, azure, gemini OK |
-| 0009 | Completed | pending `spec 0009: PNG vision extraction with revalidation` | 23 PNG records; 8 unreachable resources not in PNGs |
-| 0010–0016 | Not started | — | |
+| 0009 | Completed | `04c26e4` | 23 PNG records; 8 unreachable resources not in PNGs |
+| 0010 | Completed (recall target not met, contract-bound) | pending `spec 0010: grounded discovery, account linkage and state` | linkage 12/32 (0 wrong); 167/518 grounded |
+| 0011–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -29,6 +30,7 @@ No time, call or spend limit was configured by the user or platform; none is ass
 |---|---|---|---|---|
 | 0001 stub | not measured (scorer arrives in 0005) | not measured | not measured | not measured |
 | 0005 baseline (format-only stub), all 32 | 0.000 | not measured (no diagnostics) | 0.000 | 0.000 |
+| 0010 discovery report, all 32 (pipeline not wired) | n/a | 12/32 grounded, precision 12/12, ungrounded 20 | n/a | n/a |
 
 ## Output stage
 
@@ -45,7 +47,12 @@ not committed). No audited output exists.
 
 ## Observed failure patterns
 
-_none recorded yet_
+1. **Ungrounded accounts dominate**: 20/32 samples (351/518 overall) have no grounded subject→account link; only an
+   identifier-free DELETE_RECORD claim connects the account (e.g. case_01, case_25). They carry ACCOUNT_UNGROUNDED and
+   cannot be COMPLETE. 9 of the 10 gold-COMPLETE samples are in this group.
+2. **Anonymized analytics without a link** (case_03, case_04, case_21, case_25–28): records whose identifiers were already
+   nulled are reachable only through workflow claims, so they are not discovered.
+3. **No eligible evidence** for 7 retained audit records (case_09, case_18, case_20, case_23, case_24, case_29, case_30).
 
 ## [overnight] decisions
 
@@ -55,10 +62,10 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0010 (grounded account linkage first).
+- Continue with spec 0011.
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `c188935` (spec 0008).
+Last published checkpoint: `04c26e4` (spec 0009).

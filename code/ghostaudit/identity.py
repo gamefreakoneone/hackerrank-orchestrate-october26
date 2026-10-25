@@ -81,24 +81,38 @@ class Subject:
         return self.emails | self.phones | self.names | self.email_hashes | frozenset(user_ids)
 
 
-def eligible_email_owner(dataset: Dataset, email: str, audit_at) -> str | None:
-    """user_id whose eligible (≤ audit_at) snapshot or audit email values contain `email`; exact, then lower-case."""
-    candidates: list[tuple[str, str]] = []   # (value, user_id)
+def identifier_owner_index(dataset: Dataset, audit_at) -> dict[str, set[str]]:
+    """Normalized identifier (email, phone, email hash, user id) -> user_ids, from values eligible at the cutoff:
+    snapshots with updated_at <= audit_at and audit rows with event_time <= audit_at (later rows never read)."""
+    owners: dict[str, set[str]] = {}
+
+    def add(value: str, kind: str, user_id: str) -> None:
+        if not value:
+            return
+        key = {"email": normalize_email, "phone": normalize_phone}.get(kind, lambda v: v.strip().lower())(value)
+        owners.setdefault(key, set()).add(user_id)
+        if kind == "email":
+            owners.setdefault(sha256_hex(key), set()).add(user_id)
+
     for identity in dataset.identities.values():
+        owners.setdefault(identity.user_id, set()).add(identity.user_id)
         if identity.updated_at <= audit_at:
-            candidates.append((identity.email, identity.user_id))
+            add(identity.email, "email", identity.user_id)
+            add(identity.phone, "phone", identity.user_id)
+            add(identity.email_hash, "email_hash", identity.user_id)
     for event in dataset.audit:
         if event.event_time > audit_at:
             break                              # audit is sorted by event_time: later rows are never read
-        if event.field_name == "email":
-            candidates += [(event.old_value, event.user_id), (event.new_value, event.user_id)]
-    for normalize in (str.strip, normalize_email):
-        owners = {user_id for value, user_id in candidates if normalize(value) == normalize(email)}
-        if len(owners) == 1:
-            return owners.pop()
-        if len(owners) > 1:
-            raise ValueError(f"email maps to several users at the cutoff: {sorted(owners)}")
-    return None
+        for value in (event.old_value, event.new_value):
+            add(value, event.field_name, event.user_id)
+    return owners
+
+
+def eligible_email_owner(dataset: Dataset, email: str, audit_at) -> str | None:
+    owners = identifier_owner_index(dataset, audit_at).get(normalize_email(email), set())
+    if len(owners) > 1:
+        raise ValueError(f"email maps to several users at the cutoff: {sorted(owners)}")
+    return next(iter(owners), None)
 
 
 def resolve(request: Request, dataset: Dataset) -> Subject:
