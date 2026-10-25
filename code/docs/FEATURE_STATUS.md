@@ -26,7 +26,7 @@ spec whose dependencies are not `Completed`.
 | 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Completed (investigation only) | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
 | 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Completed | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
 | 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Completed | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
-| 0022 | [observation-time-cutoffs](specs/0022-observation-time-cutoffs/) | Not started | 0021 | Prevent future observations/identifiers/coverage from influencing earlier audits. |
+| 0022 | [observation-time-cutoffs](specs/0022-observation-time-cutoffs/) | Completed | 0021 | Prevent future observations/identifiers/coverage from influencing earlier audits. |
 | 0023 | [unknown-copy-treatment](specs/0023-unknown-copy-treatment/) | Not started | 0022 | Keep unknown flow/restore treatment for every relevant copy; block false compliance. |
 | 0024 | [final-artifact-hash-verification](specs/0024-final-artifact-hash-verification/) | Not started | 0023 | Verify final diagnostics and usage-ledger hashes before report interpretation/rendering. |
 | 0025 | [selected-output-configuration-guards](specs/0025-selected-output-configuration-guards/) | Not started | 0024 | Refuse non-release configurations targeting root output.csv before inference/writes. |
@@ -35,7 +35,7 @@ spec whose dependencies are not `Completed`.
 
 Read [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
 [review 0002](reviews/0002-corrective-pass-review.md). Work/push branch: `claude/specs-0017-0021-5s3kpe`;
-audited baseline `88a357ea152601aeca3ce5cc98e0fd764597b1c6`. **Next: 0022. All four new specs are Not started.**
+audited baseline `88a357ea152601aeca3ce5cc98e0fd764597b1c6`. **0022 Completed (code fix; release not regenerated). Next: 0023.**
 
 The targeted review confirmed one blocker and three major defects; the exhaustive audit remains unfinished.
 The saved output has future-state contamination in case_135 and case_383 and is **not approved for submission**.

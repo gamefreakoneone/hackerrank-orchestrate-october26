@@ -17,7 +17,7 @@ from ghostaudit.evidence.text import parse_text
 from ghostaudit.loaders import Dataset
 from ghostaudit.models import Activity
 
-PARSER_VERSION = "0017.2"
+PARSER_VERSION = "0022.1"
 CACHE_DIR = Path(__file__).resolve().parents[2] / ".cache" / "evidence"
 STATE_CHECK_EVENT_TYPES = ("CHECK_DATA_FLOW", "CHECK_RESTORE_ACCESS")
 
@@ -46,8 +46,17 @@ class Ledger:
             self.coverage_by_system[coverage.system_id].append(coverage)
 
 
+def state_observed_at(item: Observation | SnapshotCoverage) -> datetime:
+    """When the state was observed: snapshot header, read/line timestamp or record observed/recorded time, else the
+    file capture time (the file establishes state when it was captured). Never clipped to the capture time: a record
+    dated after its file's capture keeps its own, later time (spec 0022)."""
+    asserted = item.snapshot_at if isinstance(item, SnapshotCoverage) else item.observed_at
+    return asserted or item.captured_at
+
+
 def eligible(item: Observation | SnapshotCoverage, audit_at: datetime) -> bool:
-    return item.captured_at <= audit_at
+    """Both available (file captured) and observed at or before audit_at; the later bound decides (spec 0022)."""
+    return max(item.captured_at, state_observed_at(item)) <= audit_at
 
 
 def parse_file(file_id: str, captured_at: datetime, path: Path) -> tuple[list[Observation], list[SnapshotCoverage]]:

@@ -1,13 +1,13 @@
 # Spec 0022 — Observation-time cutoffs: tasks
 
-- [ ] Sync the named branch and read all four spec files, the new handoff and review B1.
-- [ ] Capture an offline/no-cache sample baseline; record configuration and revision.
-- [ ] Reproduce both account errors and demonstrate failing fictional temporal regressions on the baseline.
-- [ ] Inventory temporal influence paths; implement cutoff-safe observations and coverage without backdating.
-- [ ] Update consumers, parser cache version where needed, Key Contracts and decision log.
-- [ ] Run focused checks, the affected-case assessment and comparable after/dev scoring; explain differences.
-- [ ] Update status/tasks/FEATURE_STATUS/MORNING_REPORT, append log, export and verify the actual harness trace.
-- [ ] Commit `spec 0022: enforce observation-time cutoffs`, push and verify publication before 0023.
+- [x] Sync the named branch and read all four spec files, the new handoff and review B1.
+- [x] Capture an offline/no-cache sample baseline; record configuration and revision.
+- [x] Reproduce both account errors and demonstrate failing fictional temporal regressions on the baseline.
+- [x] Inventory temporal influence paths; implement cutoff-safe observations and coverage without backdating.
+- [x] Update consumers, parser cache version where needed, Key Contracts and decision log.
+- [x] Run focused checks, the affected-case assessment and comparable after/dev scoring; explain differences.
+- [x] Update status/tasks/FEATURE_STATUS/MORNING_REPORT, append log, export and verify the actual harness trace.
+- [x] Commit `spec 0022: enforce observation-time cutoffs`, push and verify publication before 0023.
 
 ## Validation commands
 

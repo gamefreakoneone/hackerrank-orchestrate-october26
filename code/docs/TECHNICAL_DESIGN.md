@@ -4,7 +4,7 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Next correction pass — planned, not implemented (0022–0025)
+## Next correction pass — 0022 implemented; 0023–0025 planned
 
 Targeted audit of `88a357e`: [reviews/0002-corrective-pass-review.md](reviews/0002-corrective-pass-review.md).
 Execution handoff: [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md).
@@ -13,7 +13,7 @@ the implemented Key Contracts or assert that the runtime already satisfies them.
 
 | Owner | Planned contract correction | Required evidence |
 |---|---|---|
-| 0022 | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
+| 0022 (**implemented**) | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
 | 0023 | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
 | 0024 | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
 | 0025 | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
@@ -68,7 +68,8 @@ per case:
               + subject-level account link (§5 Q3): grounded reference links; workflow timing only ranks
                 ungrounded candidates (diagnostics), never grounds them
   4 state @ audit_at per resource and storage copy (0017): per copy, the latest establishing observation by observation
-    time, or a later snapshot of that copy omitting it (file captured_at ≤ audit_at); never observed ⇒ §5 Q2 omission;
+    time, or a later snapshot of that copy omitting it (captured_at and observation time both ≤ audit_at, 0022);
+    never observed ⇒ §5 Q2 omission;
     state-check activity (CHECK_DATA_FLOW / CHECK_RESTORE_ACCESS) only if no file establishes it;
     operational claims (DELETE_RECORD SUCCESS, …) never set state; nothing establishes it ⇒ UNKNOWN
   5 policy → obligations (required end state; rule conditions TRUE/FALSE/UNKNOWN)
@@ -114,7 +115,9 @@ class Observation(BaseModel, frozen=True):
     captured_at: datetime             # manifest captured_at; activity event_time for activity — the cutoff key
     observed_at: datetime | None      # when the state was observed (0017): SQL snapshot header, record observed_at /
                                       # recorded_at or bundle snapshot time, last log line of the trace; never a
-                                      # row's updated_at. None ⇒ captured_at; ordering uses min(observed_at, captured_at)
+                                      # row's updated_at. None ⇒ captured_at. Never clipped (0022): eligible only when
+                                      # max(captured_at, observed_at) ≤ audit_at (`index.eligible`); ordering uses
+                                      # `index.state_observed_at` = observed_at or captured_at
     source_kind: Literal["sql", "json", "log", "txt", "pdf", "png", "activity"]  # "activity" = state-check events only
     container: str                    # table / collection / log service / document type
     physical_copy: str                # SQL table suffix ("primary", "failover_replica", …) or a format label
@@ -139,7 +142,8 @@ Separate from `Observation` because an empty table/collection has no record but 
 class SnapshotCoverage(BaseModel, frozen=True):
     file_id: str
     captured_at: datetime             # manifest captured_at (cutoff key); snapshot-level time kept in `snapshot_at`
-    snapshot_at: datetime | None      # "Captured at" header / snapshots[].captured_at / snapshot_scope.captured_at
+    snapshot_at: datetime | None      # "Captured at" header / snapshots[].captured_at / snapshot_scope.captured_at;
+                                      # eligibility needs both captured_at and snapshot_at ≤ audit_at (0022)
     system_id: str                    # logical service (account_service, …)
     collection: str                   # table or collection, e.g. "customer_profiles_failover_replica"
     physical_copy: str                # "primary", "failover_replica", "read_replica", "replica_eu_west", "bundle", …
@@ -148,7 +152,9 @@ class SnapshotCoverage(BaseModel, frozen=True):
     row_count: int                    # 0 is valid and meaningful (evidence_51, evidence_90)
     resource_ids: frozenset[str]
     covered_subjects: frozenset[str] | None = None   # 0017: a records-assurance bundle is complete only for the
-                                      # user_ids it was exported for; None = full table (SQL snapshots)
+                                      # user_ids it was exported for; None = full table (SQL snapshots); a record
+                                      # dated after its snapshot names no covered subject but stays in resource_ids
+                                      # (filtering it never manufactures an omission) — 0022
 ```
 
 Absence by omission (0017): a copy last observed present is cleared only by a later (snapshot time) coverage row of
@@ -366,7 +372,9 @@ Explicit fields first, then container names, then log event names; LLM only as f
      (RESTORE_BACKUP names a repopulated resource) but never establish a state and are never cited as proof.
      The participant contract allows activity/audit citations; samples never needed them.
 - Cutoff is by file `captured_at`, not line timestamps: `evidence_06` (captured 2026-09-18) has lines dated
-  2026-09-16 that would prove case_09 facts, and gold does not use it.
+  2026-09-16 that would prove case_09 facts, and gold does not use it. Since 0022 the observation time is a second
+  bound: a record dated after audit_at (evidence_13, evidence_36 hold the only two in the dataset) stays out even
+  when its file was captured by then.
 
 ### Q3 — Does identifier search + expansion find the gold resources?
 
@@ -487,3 +495,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0019** No discovery rule added: all 34 sample misses lack a pre-cutoff record tying them to the subject (14 workflow claims only, 12 records without ownership, 5 post-cutoff only, 3 no evidence); miss causes are classified by `discovery_report.py`; 0010's ≥85% recall target stays unmet (77/111) | Contract over score: timing, co-occurrence and post-cutoff links are guesses |
 | 2026-10-25 | **0020** Evaluation reports are rendered only from a hashed `evaluation_inputs.json` bundle (captured at a committed revision by `capture_inputs.py`) plus the final manifest; `make_reports.py` makes no model call, verifies hashes/coverage/configurations/revisions and fails with exit 1 on any mismatch; claims are computed from per-case scores; a revision mismatch must be acknowledged and is labelled "NOT a unified release" | Review finding 4: false exact-plan claim, `runs/` dependency, validator command without diagnostics |
 | 2026-10-25 | **0021** Candidate-first publication in `main.py`; release = candidate + diagnostics + usage ledger + same-revision evaluation inputs + reports, promoted only by `finalize_run.py` after validation; producing revision = committed code checked by `uncommitted_producing_code`; hashed artifacts stored `-text`; corrected cold run `0021_candidate_20261025T104010Z` at `b90914b` selected | Review finding 5 and the CRLF checksum observation; the run is the default configuration only |
+| 2026-10-25 | **0022** Eligibility needs availability *and* observation time ≤ audit_at (`index.eligible`, one rule for discovery, account linking, category/policy selection, per-copy state, coverage and citations); the `min(observed_at, captured_at)` clipping in `timeline.observation_time`/`coverage_time` deleted in favour of `index.state_observed_at`; bundle records dated after their snapshot name no covered subject; business dates (retention_until) stay fields; parser cache 0017.2 → 0022.1 | Review B1: a FOUND row dated two days after its file's capture overrode the at-cutoff NOT_FOUND (case_135, case_383); full offline run changes exactly those two rows INCOMPLETE → COMPLETE |

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from ghostaudit.evidence.derive import config
-from ghostaudit.evidence.index import Ledger, eligible
+from ghostaudit.evidence.index import Ledger, eligible, state_observed_at
 from ghostaudit.evidence.model import Observation, SnapshotCoverage
 from ghostaudit.identity import Subject
 
@@ -102,16 +102,6 @@ def storage_copy(physical_copy_label: str) -> str:
     return SYSTEM_OF_RECORD_COPY if physical_copy_label in EVIDENCE_FORMAT_LABELS else physical_copy_label
 
 
-def observation_time(observation: Observation) -> datetime:
-    """When the state was observed (snapshot header, read/line timestamp, record observed/recorded time), else the
-    file capture time; never later than the file became available."""
-    return min(observation.observed_at or observation.captured_at, observation.captured_at)
-
-
-def coverage_time(coverage: SnapshotCoverage) -> datetime:
-    return min(coverage.snapshot_at or coverage.captured_at, coverage.captured_at)
-
-
 @dataclass(frozen=True)
 class Fact:
     value: object                     # 'present'/'absent', or bool for enabled / restorable
@@ -132,7 +122,7 @@ def latest_fact_by_physical_copy(observations: list[Observation], extract, prefe
         if value is None:
             continue
         copy = storage_copy(observation.physical_copy)
-        when = observation_time(observation)
+        when = state_observed_at(observation)
         key = (when, observation.captured_at, observation.evidence_id, value == prefer)
         if copy not in latest or key > latest[copy][0]:
             latest[copy] = (key, Fact(value, observation.evidence_id, "file", observation, "observed", copy, when))
@@ -191,18 +181,19 @@ def presence_by_physical_copy(resource_id: str, system_id: str | None, category:
     for copy, fact in list(facts.items()):
         if fact.value != "present":
             continue
-        later = [c for c in omitting if storage_copy(c.physical_copy) == copy and coverage_time(c) > fact.observed_at]
+        later = [c for c in omitting
+                 if storage_copy(c.physical_copy) == copy and state_observed_at(c) > fact.observed_at]
         if later:
-            omission = max(later, key=lambda c: (coverage_time(c), c.captured_at, c.file_id))
+            omission = max(later, key=lambda c: (state_observed_at(c), c.captured_at, c.file_id))
             facts[copy] = Fact("absent", omission.file_id, "file", None, "snapshot_omission", copy,
-                               coverage_time(omission))
+                               state_observed_at(omission))
     if not facts:
         omission = absence_by_omission(resource_id, system_id, category, audit_at, ledger, last_delete_at,
                                        subject_user_id)
         if omission is not None:
             copy = storage_copy(omission.physical_copy)
             facts[copy] = Fact("absent", omission.file_id, "file", None, "snapshot_omission", copy,
-                               coverage_time(omission))
+                               state_observed_at(omission))
     return facts or _state_check(observations, observed_presence)
 
 

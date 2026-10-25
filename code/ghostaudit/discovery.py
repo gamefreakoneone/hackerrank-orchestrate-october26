@@ -1,5 +1,5 @@
 """Resource discovery for one request (spec 0010): exact identifier links, LINK_RESOURCE_IDENTITY, reference edges.
-Only evidence captured (activity: event_time) at or before audit_at is read."""
+Only evidence captured and observed (activity: event_time) at or before audit_at is read (spec 0022)."""
 from __future__ import annotations
 
 import re
