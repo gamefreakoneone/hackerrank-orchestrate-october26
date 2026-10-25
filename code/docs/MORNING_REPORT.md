@@ -16,8 +16,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0002 | Completed (before this run) | `66e8559` and earlier | recon |
 | 0003 | Completed | `0695b52` | 7 tests |
 | 0004 | Completed | `84bbd03` | 13 tests; validator clean on sample_output.csv |
-| 0005 | Completed | pending `spec 0005: grader-replica scorer, frozen split, eval runner` | baseline recorded |
-| 0006–0016 | Not started | — | |
+| 0005 | Completed | `4f192d3` | baseline recorded |
+| 0006 | Completed | pending `spec 0006: cutoff-strict identity resolution` | 518/518 resolved, 100 historical request emails |
+| 0007–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -51,9 +52,9 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0006.
+- Continue with spec 0007.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `84bbd03` (spec 0004).
+Last published checkpoint: `4f192d3` (spec 0005).
