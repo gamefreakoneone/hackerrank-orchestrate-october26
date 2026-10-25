@@ -32,6 +32,9 @@ spec whose dependencies are not `Completed`.
 - Second review of `d440ced` → Phase 0c: asserted absence rule (0b claim was 3/4), strict identity cutoff,
   grounded account links required for COMPLETE (`ACCOUNT_UNGROUNDED`), state-check vs operational activity,
   `[]` validator rule, FALSE conditions ⇒ `POLICY_UNDEFINED` (no inferred inverse), custom validation ≠ holdout.
+- Third review of `290b4fb` → Phase 0d: no stale-snapshot fallback, historical grounded accounts kept, post-cutoff
+  identity snapshots excluded, activity observations in the contract. **Phase 0 closed; next: spec 0001** (new
+  session).
 
 ## Status definitions
 

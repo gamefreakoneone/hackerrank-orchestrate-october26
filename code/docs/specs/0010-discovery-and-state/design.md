@@ -8,7 +8,8 @@ Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 - `ghostaudit/account_link.py`: `link_account(subject, request, ledger, activity) -> AccountLink(account_id | None,
   via: Literal["grounded", "multi_grounded", "ungrounded"], ranked_candidates: list[str], flags)`;
   memoized per (user_id, audit_at). Phase-0c baseline (`code/tools/p0_q3c_account_link.py`): grounded 11 unique +
-  1 multi = 12/32, 0 wrong; ungrounded 20/32 (top-ranked candidate right 8/20 — diagnostics only).
+  1 multi (measured by link time) = 12/32, 0 wrong; ungrounded 20/32 (top-ranked candidate right 8/20 —
+  diagnostics only). `AccountLink` carries `current: str | None` and `historical: list[str]`.
 - `ghostaudit/timeline.py`: `state_at(resource_id, audit_at, ledger) -> ResourceState(state, proof_file_id, obs)`.
 - Decoy guard: a record linked only by a name or only by `correlation_key` must also share user_id/email/phone/hash.
 - Known data facts: deleted accounts show `profile: null, status_code: 404`; anonymized analytics have all

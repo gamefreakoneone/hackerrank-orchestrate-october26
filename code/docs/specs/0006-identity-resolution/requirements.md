@@ -13,8 +13,9 @@ Resolve the subject and every identifier valid at or before audit_at.
 - Request email may be current or historical (100/517 historical-only); match exact string after strip, then
   lower-case as fallback.
 - Only audit rows with `event_time ≤ audit_at` contribute; post-cutoff rows are **never read** (no reverting of later
-  changes). Identifiers = current snapshot values + old/new values of pre-cutoff rows. If the snapshot's
-  `updated_at > audit_at`, flag `IDENTITY_SNAPSHOT_AFTER_CUTOFF` (measured 0/550 requests; also 0/550 subjects have
+  changes). Identifiers = old/new values of pre-cutoff rows + current snapshot values **only if the snapshot's
+  `updated_at ≤ audit_at`**; otherwise the snapshot values are excluded (unavailable at the cutoff), only user_id and
+  pre-cutoff audit values are used, and `IDENTITY_SNAPSHOT_AFTER_CUTOFF` is flagged (measured 0/550 requests; also 0/550 subjects have
   post-cutoff audit rows, so strict and "revert" give identical identifiers — `code/tools/p0_q6_identity_cutoff.py`).
 - Unknown email ⇒ Subject with only the email and its hash (no crash).
 

@@ -21,14 +21,15 @@ Status decision, full step plan, deterministic evidence citation; end-to-end on 
   (1) observed state: latest eligible file with an observation of the resource showing that state;
   (2) absence by omission: eligible `SnapshotCoverage` of the system not containing the resource; drop snapshots
   superseded by the resource's last DELETE_RECORD activity ≤ audit_at; take the latest with replica coverage, else
-  the latest (TECHNICAL_DESIGN §5 Q2; chosen post hoc, 4/4 on 4 points; `code/tools/p0_q2b_coverage.py` asserts it
-  and shows the 0b "most copies" rule was 3/4);
+  the latest; **no surviving candidate ⇒ UNKNOWN_STATE** (never fall back to a superseded snapshot)
+  (TECHNICAL_DESIGN §5 Q2; chosen post hoc, 4/4 on 4 points; `code/tools/p0_q2b_coverage.py` asserts it plus the
+  all-stale counterexample, and shows the 0b "most copies" rule was 3/4);
   (3) fallback only if no file establishes it: a state-check activity (CHECK_DATA_FLOW / CHECK_RESTORE_ACCESS) or an
   `audit_id` ≤ audit_at, flagged `ACTIVITY_CITATION`. Operational-claim activities are never cited.
 - An obligation with no establishing evidence is UNKNOWN_STATE (never cited from a non-establishing file).
-- Targets (regression set): step F1 ≥ 0.80 on dev; status accuracy reported next to linkage accuracy. Status is
-  capped at 23/32 on samples while 9 gold-COMPLETE cases lack a grounded account link — do not relax grounding to
-  raise it.
+- Targets (regression set): step F1 ≥ 0.80 on dev; status accuracy reported next to linkage accuracy. 23/32 is a
+  conditional upper bound on sample status while 9 gold-COMPLETE cases lack a grounded account link (not a measured
+  accuracy) — do not relax grounding to raise it.
 
 ## Out of scope
 

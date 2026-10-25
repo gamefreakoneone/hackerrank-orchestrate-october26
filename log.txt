@@ -746,3 +746,60 @@ repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
 
+## [2026-10-25T07:19:05Z] Phase 0d: final bounded corrections; close Phase 0
+
+User Prompt (verbatim, secrets redacted):
+This is now the right direction. I would keep grounded accounts as the default and proceed with spec 0001. The major problems from the previous revision are substantially addressed, though a few bounded corrections remain.
+I reviewed 290b4fb read-only.
+What checks out
+- The revised absence-rule assertion now reproduces 4/4, and its post-hoc nature is clearly disclosed.
+- I independently confirmed 550 resolved requests, zero subject audit rows or snapshot updates after their respective cutoffs, and identical strict/revert identifiers.
+- The linkage counts remain 11 uniquely grounded cases, one multi-grounded case, and 20 ungrounded cases.
+- Blocking those ungrounded cases affects nine gold-COMPLETE samples. 23/32 ≈ 71.9% is therefore a conditional upper bound—not measured pipeline accuracy or a permanent dataset ceiling.
+- The validator contradiction and misleading “held-out” terminology are corrected.
+- Operational success claims no longer qualify as state proof.
+The identity/linkage scripts timed out unchanged; I verified their counts using equivalent indexed, in-memory checks. No files changed.
+Remaining corrections
+1. The absence rule still has an unsafe fallback
+In code/tools/p0_q2b_coverage.py:66–68, the chosen rule ends with:
+... or [c for c in cs if c["after_delete"]] or cs
+That final or cs restores discarded snapshots when all candidates predate deletion.
+I tested that case: it selects the stale snapshot.
+Fix: Return “no establishing evidence” when no candidate survives. The resulting state should be UNKNOWN. Add this counterexample alongside the four sample assertions.
+2. “Most recent grounded account” must not silently discard another account
+The newer link for account_4092 in case_17 is confirmed. But a newer account link does not invalidate an older, genuinely grounded account.
+The plan should distinguish:
+- selecting the current account; and
+- auditing historical accounts that could still retain data.
+Also, p0_q3c_account_link.py:68–71 still selects the multi-reference account using workflow timing. Its reported success therefore does not test the newly documented most-recent-grounded-link algorithm.
+Fix: Align the measurement with the proposed algorithm, and require evidence before excluding older grounded accounts.
+3. Future identity snapshots are still permitted by the fallback specification
+TECHNICAL_DESIGN.md:172 says a post-cutoff snapshot is flagged but still used. Spec 0006 likewise adds current snapshot values before merely flagging their timestamp.
+The zero-occurrence measurement means this does not affect the supplied request subjects. It does not make that fallback cutoff-safe.
+Fix: Exclude unavailable snapshot values and use eligible identity evidence. Flagging future information is not a substitute for excluding it.
+4. One schema integration mismatch remains
+Spec 0010 introduces observations with source_kind="activity", but the Observation enum in TECHNICAL_DESIGN.md:78 still permits only file formats.
+Fix: Update that contract before implementing activity observations.
+My recommendation on Claude’s decision
+Keep ranked, ungrounded accounts out of normal output. Measure the ranked-output option as the proposed ablation, clearly identifying its guessed links. Restricting guesses to INCOMPLETE cases does not make their account-specific findings evidence-backed.
+Proceed with scaffolding, then address the corrections above in the relevant specs. The productive next goal is improving grounded discovery, rather than repeatedly tuning rules to reproduce the same inspected sample answers.
+
+
+Dont implement spec 01 yet. Lets be done with spec 0 and then I will create a new session and work from there.
+
+Agent Response Summary:
+Applied the four bounded corrections and closed Phase 0 without starting spec 0001. The absence rule now returns no establishing evidence (UNKNOWN_STATE) when every snapshot predates the deletion, asserted with a counterexample; the multi-grounded measurement uses link times (case_17: current account_4092, historical account_6523 kept as an obligation); post-cutoff identity snapshot values are excluded rather than flagged (0/550 affected); Observation gains source_kind "activity" and evidence_id. Design, specs 0002/0006/0007/0010/0011/0012/0015 and FEATURE_STATUS updated; 23/32 described as a conditional upper bound.
+
+Actions:
+* Edited code/tools/p0_q2b_coverage.py, p0_q3c_account_link.py, p0_q3_discovery.py; ran all p0 scripts
+* Edited code/docs/TECHNICAL_DESIGN.md; regenerated code/docs/specs/* and FEATURE_STATUS.md
+* Ran scripts/save_trace.sh; git commit "phase 0d: final planning corrections, close phase 0"; git push
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/eager-cray-7fhtkf
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none
+

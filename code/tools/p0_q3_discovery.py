@@ -72,13 +72,15 @@ MODE = "strict"  # "strict": post-cutoff audit rows are never read; "revert": un
 def identity_at(uid, cut, mode=None):
     """Identifier values of `uid` usable at `cut`.
 
-    strict: current snapshot values + old/new values of audit rows with event_time <= cut (post-cutoff rows unread).
+    strict: old/new values of audit rows with event_time <= cut (post-cutoff rows unread), plus the current snapshot
+            only if its updated_at <= cut (otherwise its values are unavailable and excluded).
     revert: current snapshot with post-cutoff changes reverted (reads post-cutoff rows; phase 0b behaviour).
     """
     mode = mode or MODE
     u = ids[uid]
-    cur = {"email": u["email"], "phone": u["phone"], "email_hash": u["email_hash"]}
-    vals = {uid, u["name"]}
+    snapshot_ok = mode == "revert" or ts(u["updated_at"]) <= cut  # strict: a post-cutoff snapshot is unavailable
+    cur = {"email": u["email"], "phone": u["phone"], "email_hash": u["email_hash"]} if snapshot_ok else {}
+    vals = {uid, u["name"]} if snapshot_ok else {uid}
     for a in sorted(audit, key=lambda a: a["event_time"], reverse=True):
         if a["user_id"] != uid:
             continue

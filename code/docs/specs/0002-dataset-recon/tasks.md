@@ -5,6 +5,7 @@
 - [x] Phase-0 scripts p0_q1..q5
 - [x] Answers in TECHNICAL_DESIGN §5
 - [x] Phase-0b corrections after Codex review (cutoff-safe exact baselines)
+- [x] Phase-0c/0d corrections after second and third reviews
 - [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0002: <summary>`
 
 ## Validation commands

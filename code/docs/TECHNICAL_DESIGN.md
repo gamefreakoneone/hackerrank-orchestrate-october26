@@ -72,10 +72,10 @@ Rows sorted by the integer suffix of `case_id`.
 
 ```python
 class Observation(BaseModel, frozen=True):
-    file_id: str                      # evidence_NN (the only citable id)
-    captured_at: datetime             # from evidence_files.csv — the cutoff key
+    evidence_id: str                  # file_id (evidence_NN); activity_id when source_kind == "activity"
+    captured_at: datetime             # manifest captured_at; activity event_time for activity — the cutoff key
     observed_at: datetime | None      # record-level time if present (observed_at, updated_at, log ts)
-    source_kind: Literal["sql", "json", "log", "txt", "pdf", "png"]
+    source_kind: Literal["sql", "json", "log", "txt", "pdf", "png", "activity"]  # "activity" = state-check events only
     container: str                    # table / collection / log service / document type
     physical_copy: str                # e.g. "customer_profiles_failover_replica", "primary"
     system_id: str | None             # logical service (derived, §5 Q1)
@@ -163,13 +163,13 @@ proof. Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted
 | Flag | When | Status | Steps |
 |---|---|---|---|
 | `ACCOUNT_UNGROUNDED` | no grounded subject→account link (§5 Q3); covers "no candidate at all" | INCOMPLETE (blocker) | **no account steps**; ranked candidates go to diagnostics only (ablation `--ungrounded-account-steps ranked` in 0015 measures emitting the top candidate instead) |
-| `ACCOUNT_MULTI_GROUNDED` | >1 grounded account | not a blocker | most recent grounded link is the account; the others are listed in diagnostics |
+| `ACCOUNT_MULTI_GROUNDED` | >1 grounded account | not a blocker | the most recent grounded link is the **current** account; every older grounded account stays an obligation (**historical account**, may still retain data) unless evidence excludes it (linked to another user, or proven the same record); never dropped silently |
 | `UNKNOWN_STATE` | no eligible file / coverage / state-check activity establishes the state | INCOMPLETE (blocker) | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
 | `POLICY_UNDEFINED` | a rule condition evaluates FALSE (the rules define no action for that branch) | INCOMPLETE (blocker) | no step for that resource; flagged for review — code does not invent an action |
 | `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE (blocker) | `[]` |
 | `CONDITION_DEFAULTED` | rule condition has no field (UNKNOWN) | not a blocker | default (rule's stated) branch |
 | `ACTIVITY_CITATION` | proof is a state-check activity_id / audit_id | not a blocker | cited as is |
-| `IDENTITY_SNAPSHOT_AFTER_CUTOFF` | subject's identity snapshot updated_at > audit_at | not a blocker | identifiers from pre-cutoff audit rows + snapshot; flagged (0 occurrences in data) |
+| `IDENTITY_SNAPSHOT_AFTER_CUTOFF` | subject's identity snapshot updated_at > audit_at | not a blocker | snapshot values are **excluded** (unavailable at the cutoff); identifiers come only from pre-cutoff audit rows and user_id; a request email not found there leaves the subject as that email + hash; flagged (0/550 occurrences) |
 
 No finding, account or evidence is ever invented to fill a blocker. Proving an account deleted does not prove it
 is the subject's account, so a ranked (ungrounded) account can never support COMPLETE. The validator accepts
@@ -177,10 +177,11 @@ is the subject's account, so a ranked (ungrounded) account can never support COM
 otherwise requires NOT_APPLICABLE.
 
 Phase-0c measurement on samples (`p0_q3c_account_link.py` §F, gold as oracle). **Linkage accuracy is reported
-separately from status accuracy:** grounded links 12/32 (11 unique, 1 multi-grounded resolved by most-recent link),
+separately from status accuracy:** grounded links 12/32 (11 unique, 1 multi-grounded: current = most recent link, older kept as historical),
 0 wrong; ungrounded 20/32 (the top-ranked candidate would be right 8/20, wrong 12/20 = 60% of ambiguous cases,
 37.5% of all samples). Cost of the grounding requirement: 9 of 10 gold-COMPLETE samples have no grounded link and
-become INCOMPLETE, so sample status accuracy is capped at 23/32 until spec 0010 grounds more accounts. We accept
+become INCOMPLETE, so 23/32 (≈71.9%) is a **conditional upper bound** on sample status under current linking —
+not a measured pipeline accuracy and not a dataset ceiling; it rises as spec 0010 grounds more accounts. We accept
 that cost rather than claim COMPLETE on an unproven identity link. `UNKNOWN_STATE` over gold resources: 8/111
 (7 retained audit records in INCOMPLETE cases; account_004 in case_04 is a linking gap, since evidence_54 covers it).
 
@@ -278,7 +279,9 @@ Explicit fields first, then container names, then log event names; LLM only as f
      coverage** = the file covers ≥1 non-primary physical copy (failover/read/reporting/regional replica);
      **superseded** = captured at or before the resource's last DELETE_RECORD activity ≤ audit_at (cannot prove the
      deletion took effect). Rule: drop superseded candidates; among the rest take the **latest with replica
-     coverage**, else the latest. Results of every rule tried (4 omission citations):
+     coverage**, else the latest; **if no candidate survives, nothing establishes absence ⇒ UNKNOWN_STATE** (no
+     fallback to superseded snapshots — asserted with a counterexample in the script). Results of every rule tried
+     (4 omission citations):
      latest 3/4 (case_04 → evidence_90); latest-after-delete 3/4; the 0b "most copies, then latest" claim **3/4**
      (case_04 → evidence_29, three copies on 05-19 — the 0b 4/4 claim did not reproduce because the old script
      printed only the latest four candidates); latest-with-replica-after-delete **4/4**. The last was chosen
@@ -315,7 +318,10 @@ names and phones must not be embedded in a longer word/number.
   - B. Subject-level linking. **Grounded** = a subject identifier and the account id in one record ≤ audit_at
     (pre-deletion rows, customer/subject_reference, LINK_RESOURCE_IDENTITY, readback trace groups). Grounded:
     **11** unique + **1** multi-grounded (case_17: account_6523 from a 03-10 readback 404, account_4092 from a
-    09-15 readback; the most recent grounded link picks the gold account — one data point), **0 wrong**.
+    09-15 readback; the most recent grounded link is the current account and matches gold — one data point;
+    measured by link time, not workflow timing), **0 wrong**. account_6523 stays a historical-account obligation
+    (its 03-10 readback 404 would prove ABSENT); gold lists only account_4092, so this costs one extra step on
+    case_17 — accepted, because a newer link does not prove the older account holds no data.
     **Ungrounded: 20/32.** Workflow candidates (DELETE_RECORD → account_service in the request window, not linked
     to another user) are only ranked: nearest to reported_at 8/20, claim-aware nearest 8/20, latest before
     reported_at 5/20, earliest after request 2/20, unique-candidate-only 2/20. The best ranking is wrong on 12/20
@@ -393,3 +399,8 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0c** Validator: `[]` ⇔ NOT_APPLICABLE, except INCOMPLETE `[]` with a blocker flag | Second review: 0004 vs 0012 contradiction |
 | 2026-10-25 | **0c** FALSE policy condition ⇒ `POLICY_UNDEFINED` blocker, no inferred inverse action | Second review: rules do not define inverse branches |
 | 2026-10-25 | **0c** Synthetic + metamorphic cases are custom validation, not a holdout | Second review |
+| 2026-10-25 | **0d** Absence rule has no fallback to superseded snapshots: no surviving candidate ⇒ UNKNOWN_STATE | Third review: `or cs` fallback selected a stale snapshot; counterexample asserted |
+| 2026-10-25 | **0d** Multi-grounded: current = most recent grounded link; older grounded accounts remain historical obligations unless evidence excludes them; measurement uses link times | Third review: newer link does not invalidate an older grounded account; script used workflow timing |
+| 2026-10-25 | **0d** Post-cutoff identity snapshot values excluded, not just flagged | Third review: flagging is not exclusion (0/550 affected) |
+| 2026-10-25 | **0d** `Observation.source_kind` includes `"activity"`; `file_id` → `evidence_id` | Third review: schema mismatch with spec 0010 |
+| 2026-10-25 | **Phase 0 closed.** Grounded accounts are the default; ranked accounts only in the 0015 ablation, labelled as guesses. 23/32 is a conditional upper bound on sample status under current linking, not a measured accuracy or dataset ceiling. Next focus: grounded discovery, not re-fitting inspected samples | Third review sign-off |

@@ -18,7 +18,11 @@ Find every resource relevant to the subject and its state at audit_at.
      a. **grounded** links ≤ audit_at: a subject identifier and the account id in one record — pre-deletion
         snapshot rows, `customer_reference` / `subject_reference`, LINK_RESOURCE_IDENTITY, readback trace groups
         (tombstone `subject_reference` confirms the subject but names no account). Unique ⇒ `via=grounded`.
-        Several ⇒ the most recent grounded link, flag `ACCOUNT_MULTI_GROUNDED` (case_17: one data point).
+        Several ⇒ `ACCOUNT_MULTI_GROUNDED`: the account with the most recent grounded link (latest eligible
+        captured_at of a linking record) is the **current** account; every older grounded account stays as a
+        **historical** account obligation (it may still retain data) unless evidence excludes it (linked to another
+        user, or shown to be the same record). Never dropped silently. case_17: current account_4092 (09-15 link),
+        historical account_6523 (03-10 link; one extra step vs gold, accepted).
      b. no grounded link ⇒ flag `ACCOUNT_UNGROUNDED` (completion blocker, spec 0012). Workflow candidates —
         `DELETE_RECORD → account_service` with `requested_at ≤ event_time ≤ min(audit_at, reported_at + 15 min)`
         not linked to another user ≤ audit_at — are **ranked** by `|event_time − reported_at|` and written to

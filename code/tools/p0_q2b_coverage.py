@@ -63,10 +63,17 @@ RULES = {
     "latest_after_delete": lambda cs: max([c for c in cs if c["after_delete"]] or cs, key=lambda c: c["captured"]),
     "after_delete_most_copies_then_latest (0b claim)":
         lambda cs: max([c for c in cs if c["after_delete"]] or cs, key=lambda c: (c["copies"], c["captured"])),
-    "after_delete_latest_with_replica_else_latest":
-        lambda cs: max([c for c in cs if c["after_delete"] and c["has_replica"]]
-                       or [c for c in cs if c["after_delete"]] or cs, key=lambda c: c["captured"]),
+    "after_delete_latest_with_replica_else_latest": lambda cs: chosen_rule(cs),
 }
+
+
+def chosen_rule(cs):
+    """Adopted rule (TECHNICAL_DESIGN §5 Q2). No fallback to superseded snapshots: if every candidate predates the
+    resource's last deletion activity, nothing establishes absence -> None (state UNKNOWN)."""
+    live = [c for c in cs if c["after_delete"]]
+    if not live:
+        return None
+    return max([c for c in live if c["has_replica"]] or live, key=lambda c: c["captured"])
 
 if __name__ == "__main__":
     text = load_text()
@@ -75,7 +82,7 @@ if __name__ == "__main__":
                and s["evidence_id"] and s["resource_id"] not in text[s["evidence_id"]]]
     print("omission citations:", [(c, r, e) for c, r, e in targets])
     for name, rule in RULES.items():
-        picks = [(cid, rule(candidates(cid, rid))["file"], cite) for cid, rid, cite in targets]
+        picks = [(cid, (rule(candidates(cid, rid)) or {"file": None})["file"], cite) for cid, rid, cite in targets]
         ok = sum(p == c for _, p, c in picks)
         print(f"{ok}/{len(targets)}  {name}:", ", ".join(f"{cid}->{p}{'' if p == c else ' (gold ' + c + ')'}"
                                                        for cid, p, c in picks))
@@ -85,3 +92,12 @@ if __name__ == "__main__":
     got = [RULES[CHOSEN](candidates(c, r))["file"] for c, r, _ in targets]
     assert got == [e for _, _, e in targets], (CHOSEN, got)
     print(f"chosen rule {CHOSEN!r} reproduces {len(targets)}/{len(targets)} (post hoc; 4 data points)")
+    # counterexample (review of 290b4fb): every snapshot predates the deletion -> no establishing evidence
+    from datetime import datetime, timezone
+    stale = [{"file": "snap_old", "captured": datetime(2026, 9, 1, tzinfo=timezone.utc), "copies": 2,
+              "has_replica": True, "after_delete": False},
+             {"file": "snap_older", "captured": datetime(2026, 8, 1, tzinfo=timezone.utc), "copies": 3,
+              "has_replica": True, "after_delete": False}]
+    assert chosen_rule(stale) is None, "stale snapshots must not establish absence"
+    assert chosen_rule([]) is None
+    print("counterexample: all candidates predate deletion -> None (UNKNOWN_STATE): ok")

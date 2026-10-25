@@ -10,5 +10,7 @@ Phase 0b (2026-10-25, after Codex review): exact matching + per-case cutoffs on 
 
 Phase 0c (2026-10-25, after second review): the 0b omission rule reproduced 3/4, not 4/4; replaced by an asserted post-hoc rule (4/4 on 4 points, `p0_q2b_coverage.py`); identity strict, 0/550 requests affected (`p0_q6_identity_cutoff.py`); grounded account links 11 unique + 1 multi, 0 wrong; ungrounded 20/32 (`p0_q3c_account_link.py` §F).
 
+Phase 0d (third review, sign-off): absence rule has no stale fallback (counterexample asserted); multi-grounded measured by link time, older grounded accounts kept as historical obligations; post-cutoff identity snapshots excluded; Observation source_kind includes activity. **Phase 0 closed.**
+
 ## Notes
 

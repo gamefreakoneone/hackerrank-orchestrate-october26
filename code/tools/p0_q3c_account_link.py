@@ -12,7 +12,7 @@ import re
 from collections import Counter, defaultdict
 from datetime import timedelta
 
-from p0_q3_discovery import RECS, UID_RE, act, discover, eligible_files, email_owners, tokens
+from p0_q3_discovery import RECS, UID_RE, act, discover, eligible_files, email_owners, hit, man, tokens
 from p0_common import gold, read_csv, ts
 
 ACC_RE = re.compile(r"\baccount_\d+\b")
@@ -67,8 +67,14 @@ for cid, (st, steps) in sorted(gold().items()):
         how, choice = "ref_link", linked[0]
     elif len(linked) > 1:
         how = "ref_link_multi"
-        times = {a["resource_id"]: abs((ts(a["event_time"]) - rep).total_seconds()) for a in win}
-        choice = min(linked, key=lambda x: (times.get(x, 1e12), x))
+        # documented algorithm: current account = most recent grounded link (latest eligible file captured_at
+        # holding a record with the account id and a subject identifier); older grounded accounts are kept as
+        # historical obligations unless evidence excludes them (not workflow timing)
+        last = {x: max(ts(man[f]["captured_at"]) for f in eligible_files(cut) for rec in RECS[f]
+                       if x in ACC_RE.findall(rec) and hit(rec, vals)) for x in linked}
+        choice = max(linked, key=lambda x: (last[x], x))
+        print(f"  multi-grounded {cid}: current={choice} historical={[x for x in linked if x != choice]} "
+              f"link_times={ {x: last[x].isoformat() for x in linked} }")
     else:
         ranked = [a for a in win if not (own[a["resource_id"]] - {uid})]  # not owned by another subject
         by = {
