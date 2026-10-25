@@ -19,6 +19,10 @@ This file adds OUR development workflow on top of AGENTS.md.
 4. Otherwise work on exactly the spec the user names (or the next `Not started` one).
 5. For the post-implementation correction pass, read `code/docs/CORRECTIVE_HANDOFF.md` and the implementation
    review it links. Specs 0017–0021 supersede the old overnight kickoff for this pass.
+6. For the next correction pass (0022–0025), use `code/docs/CORRECTIVE_HANDOFF_0022_0025.md` and
+   `code/docs/reviews/0002-corrective-pass-review.md`. Continue on `claude/specs-0017-0021-5s3kpe`, starting with
+   0022. The older handoff is historical; these new specs are not yet implemented. Any live provider run needs
+   separate user permission; preserve the selected release during the fixes.
 
 ## Spec-driven workflow
 

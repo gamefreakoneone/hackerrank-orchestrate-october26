@@ -4,6 +4,23 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
+## Next correction pass — planned, not implemented (0022–0025)
+
+Targeted audit of `88a357e`: [reviews/0002-corrective-pass-review.md](reviews/0002-corrective-pass-review.md).
+Execution handoff: [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md).
+Continue on `claude/specs-0017-0021-5s3kpe`. The table below records planned changes; it does not silently update
+the implemented Key Contracts or assert that the runtime already satisfies them.
+
+| Owner | Planned contract correction | Required evidence |
+|---|---|---|
+| 0022 | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
+| 0023 | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
+| 0024 | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
+| 0025 | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
+
+Update the owning implemented Key Contracts and append a decision-log entry when each spec is actually implemented.
+The historical selected run remains at b90914b until authorized regeneration; the review does not approve that output.
+
 ## Post-implementation correction pass — implemented (specs 0017–0021)
 
 Baseline: `2a722566e1367f409a5b3789ce61c1c19c566cfc`. The implementation review is

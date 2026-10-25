@@ -5,6 +5,11 @@ the Phase 0 reviews, review publication, overnight-brief review and corrections,
 and the corrective-spec planning/documentation handoff.
 The runtime identifies the harness as **OpenCode** and model as **azure/gpt-6-astra**.
 
+`ses_e8d405fd3ffewcG4gUZOdXVDyJ.json` covers the targeted audit of corrective-pass revision `88a357e`,
+the switch out of Plan mode, and the documentation/specification handoff for 0022–0025 on
+`claude/specs-0017-0021-5s3kpe`. The Plan-mode log entries were appended later with an explicit delayed-record
+note; the trace retains the original message timestamps. The review labels checks not run as not measured.
+
 The file is a pre-commit checkpoint. Its `exportNote.exportedAt` records the actual export time;
 later publication commands and the final reply require a subsequent export after session completion.
 Message IDs, timestamps, public user/assistant messages, and tool records are retained. Credentials,

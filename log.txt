@@ -1725,3 +1725,172 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T11:21:42.549028+00:00] SESSION START
+
+tool=OpenCode
+model=azure/gpt-6-astra
+Repo Root: C:\Users\amogh\Desktop\hackerrank-orchestrate-october26
+Branch: claude/specs-0017-0021-5s3kpe
+Worktree: main
+Parent Agent: none
+Language: py
+Time Remaining: not configured
+Logging note: Delayed append after Plan mode ended. The session began with a read-only audit on claude/eager-cray-7fhtkf at bf79d4a; no log was written during that phase. This entry is not backdated. Runtime identity also verified against the actual OpenCode session export.
+
+## [2026-10-25T11:21:42.549028+00:00] Deferred record of read-only corrective-pass audit
+
+User Prompt (verbatim, secrets redacted):
+Read @AGENTS.md , @CLAUDE.md  and @problem_statement.md . You are auditing a deletion-audit agent (HackerRank Orchestrate, "Ghost Data Still Exists") after a
+five-spec correction pass. Be skeptical: verify claims against code and data; do not trust the docs,
+status files or commit messages, including the author's own summary.
+
+TARGET AND SETUP
+- Repo: gamefreakoneone/hackerrank-orchestrate-october26, branch claude/specs-0017-0021-5s3kpe @ 88a357e.
+  Corrective baseline: bf79d4a (= overnight implementation 2a72256 + corrective specs). Run
+  `git pull --rebase origin <branch>` first and confirm HEAD. Only one agent should write the branch.
+- Read in full: AGENTS.md (authoritative; logging §2/§5; output contract §6), CLAUDE.md,
+  problem_statement.md, code/docs/TECHNICAL_DESIGN.md (Key Contracts + decision log),
+  code/docs/FEATURE_STATUS.md, code/docs/CORRECTIVE_HANDOFF.md, code/docs/reviews/0001-implementation-review.md,
+  the four files of specs 0017–0021, code/docs/DISCOVERY_GAP_REVIEW.md, code/docs/MORNING_REPORT.md.
+- Log a SESSION START and one entry per turn in root log.txt, with your actual harness tool= and exact
+  runtime model= (never guessed). Append-only, no secrets. No deadline is configured; do not invent one.
+
+MODE
+Read-only audit. Do not change runtime code, output.csv, code/evaluation/final_run/ or
+code/evaluation/corrective_run/. Your deliverable is code/docs/reviews/0002-corrective-pass-review.md
+(plus log.txt and the exported trace). Propose fixes as spec outlines (0022+) only for confirmed defects.
+Commit "docs: corrective-pass audit", export and verify your harness trace before committing, push, and
+verify the remote contains the commit.
+
+BUDGET
+LLM caches are gitignored, so a fresh clone has none. Prefer offline checks (pytest with RUN_LIVE unset,
+main.py --offline, validator, make_reports, scorer on the preserved bundle). A live provider run needs the
+user's permission and must be recorded as a different configuration. Do not run the full 518-case live
+pipeline. Read summaries via small scripts; never dump evidence files or system_activity.csv into context.
+
+REPRODUCE THE CLAIMED STATE FIRST (record actual results)
+1. python -m pytest code/tests -q                          (claimed: 163 passed, 2 skipped)
+2. sha256 of output.csv vs code/evaluation/final_run/manifest.json output_sha256 (claimed 81b31784…0ecb);
+   diagnostics/usage_ledger sha256 vs the manifest.
+3. python -c "import sys;sys.path.insert(0,'code');from ghostaudit.validate import cli;cli()" output.csv \
+     --diagnostics code/evaluation/final_run/diagnostics.jsonl              (claimed 0 errors / 105 warnings)
+4. python code/evaluation/make_reports.py --report-output-directory /tmp/rebuilt, then diff against
+   code/evaluation/{evaluation,usage}_report.md                             (claimed byte-identical)
+5. python code/evaluation/score.py code/evaluation/corrective_run/sample_default.csv dataset/sample_output.csv \
+     --split all --diagnostics code/evaluation/corrective_run/sample_default.diagnostics.jsonl
+                                                     (claimed 23/32, F1 0.896, exact 9/32, linkage 12/32)
+6. python code/tools/make_zip.py --output /tmp/code.zip; inspect contents and exclusions.
+7. Independently re-check output.csv against AGENTS.md §6.3–6.6 with your own script, not the repo's
+   validator: 518 unique sorted rows; exact step keys; consecutive step_no; FINDING→REMEDIATION→VERIFICATION;
+   operation/state pairs; NOT_APPLICABLE ⇔ []; COMPLETE = verification-only with evidence; INCOMPLETE
+   remediation/verification evidence ""; every cited file/activity/audit id exists and is ≤ the case's audit_at.
+
+AUDIT QUESTIONS (priority order)
+A. Hard rules. Any use of sample_output.csv or organizer data in the pipeline; logic keyed on specific
+   case/evidence/activity/resource ids; any post-audit_at evidence, activity or audit row influencing a case
+   (identity, discovery, state, policy, citation); LLM output deciding status, steps, evidence or order;
+   nondeterminism (iteration order, JSON serialization).
+B. Per-copy state (spec 0017: code/ghostaudit/timeline.py, obligations.py, evidence/sql.py, evidence/json_.py).
+   Verify or refute each assumption with data:
+   - Format labels (export, bundle, service_read, screen, document) are mapped to the system of record
+     "primary"; only SQL table names identify replicas. Is that justified, or does some evidence scope a
+     read to a replica (log region/instance/shard fields were judged to be app instances, not storage)?
+   - observation_time = min(observed_at or captured_at, captured_at). SQL observed_at is now the snapshot
+     header; JSON keeps record observed_at / recorded_at / bundle snapshot time. Can an event/creation
+     timestamp masquerade as an observation time and reorder states wrongly?
+   - Bundle omissions count only for covered_subjects = every user_*-shaped string in any bundle record.
+     Can this over- or under-scope (e.g. lookup_value fields, referenced third parties)?
+   - A copy last seen present is cleared only by a later same-copy snapshot (coverage_time > observed_at, not
+     superseded by a DELETE claim judged by captured_at). The never-observed rule keeps the old
+     "latest replica-covering file, else latest" preference. Are any absence proofs unsupported, or do any
+     present copies get wrongly cleared?
+   - Citations: a violating copy is cited; otherwise the latest compliant copy. Does each COMPLETE
+     verification's evidence actually establish the required state for that resource at audit_at?
+   - The pass changed 3 obligations on the full dataset (case_86, case_390 → COMPLETE; case_33 export_1260
+     absent). Check these three against the raw evidence.
+C. Preservation (spec 0018: obligations.py TREATMENT_SATISFIED_BY, record_is_preserved, treatment_violated;
+   policy.preservation_required; planner; validator BLOCKER_FLAGS in models.py). Does absence still satisfy
+   any kept-record obligation through some path? Is the tombstone "must keep the subject's user_id" rule
+   correct per AGENTS.md §6.5? Is "a later absence overrides an older enabled/restorable fact of the same copy"
+   sound for data flows and backups? Is REQUIRED_RECORD_MISSING (case_34) handled correctly end to end?
+D. Discovery (spec 0019, investigation-only). Re-examine the 34 sample misses and the miss_cause classifier
+   in code/tools/discovery_report.py; for example, parser_gap_candidate checks parsed field values, not raw
+   log lines. Look for defensible pre-cutoff links that were missed (hashes, phone/name normalization,
+   historical identifiers, reference fields, PNG rows). Quantify false-link risk for anything you propose.
+   The 0010 target (≥85% recall; actual 77/111) is unmet. Say whether it is attainable without guessing.
+E. Reports and reproducibility (spec 0020: code/evaluation/capture_inputs.py, make_reports.py,
+   run_custom.py). Every number in the published reports must trace to preserved artifacts. Flag remaining
+   hardcoded narrative numbers (e.g. HISTORICAL_IMPROVEMENTS), unverifiable causal prose, oracle-assisted
+   checks presented as end-to-end, and the decision to exclude test_packaging_integrity.py from the
+   captured test results.
+F. Release integrity (spec 0021: main.py, ghostaudit/provenance.py, code/tools/finalize_run.py,
+   .gitattributes, make_zip.py). Check candidate-first publication and failure paths, and the finalizer's
+   refusals. Known caveats to assess: the run reads the Git revision when it writes the manifest (a commit
+   during a run would mislabel it); finalize is a sequence of renames, not atomic. Confirm that b90914b and
+   88a357e have identical producing code (PRODUCING_CODE_PATHSPECS) and that the bundle, final_run manifest
+   and reports all name the same revision.
+G. Test quality. Find tests that pass vacuously or only test fixtures. The finalizer test fixture overrides
+   manifest provenance fields such as offline and git_revision. Check that the clean-room packaging test
+   really runs the offline sample pass, and that the CRLF test really exercises conversion.
+H. Score levers (analysis only). The 9 sample status misses are all ungrounded accounts (342/508 requests
+   in the full run). Is there any evidence-backed, non-guessing way to raise linkage or status? Measure,
+   don't implement.
+I. Compliance and hygiene: log.txt entries (exact tool=/model=, append-only, verbatim prompts), trace files
+   (agent-trace/, secrets redacted), code.zip exclusions (dataset, .env, caches, runs), README accuracy,
+   YAGNI/DRY/fail-fast/semantic naming, dead or superseded code.
+
+REPORT FORMAT (code/docs/reviews/0002-corrective-pass-review.md)
+- Header: audited SHA, your harness/model, date, what you actually ran (offline vs live, cache state).
+- Reproduction table: each claimed number from the list above vs what you observed.
+- Findings ranked by severity (blocker / major / minor / note). For each finding: file:line at 88a357e, a
+  concrete reproduction (command or small script plus output), the affected output rows or "none in the
+  current output", the recommended fix, and whether it needs a new spec.
+- Verified-correct list: what you checked and found sound, with evidence.
+- Submission go/no-go for output.csv, code.zip, the reports and log.txt, with reasons.
+- Do not fabricate metrics. Label anything not run as "not measured". Separate confirmed defects from risks.
+
+Finish by replying with: the commit SHA and branch you pushed, the counts of blocker/major/minor findings,
+the go/no-go, and the top three recommended actions. Where can we improve from here?
+
+Attachments: AGENTS.md, CLAUDE.md, problem_statement.md (file bodies referenced per section 5.4; original prompt retained in the session trace).
+
+Agent Response Summary:
+Performed a read-only audit of 88a357e through Git blobs and in-memory component execution while the checkout remained at bf79d4a. Confirmed future-dated observations affecting case_135 and case_383, unknown copy treatment being dropped, unchecked final artifact hashes during report loading, and selected-output configuration guard gaps. Verified artifact hashes, output structure, saved sample metrics and report rendering; fresh pytest and CLI clean-room checks were not run. Logging and publication were deferred during Plan mode; this is a late record, not a contemporaneous entry.
+
+Actions:
+* Read required contracts, design, reviews, handoff, specs 0017-0021, source and summarized participant evidence.
+* Used git show/ls-remote and Python -B in-memory validation, scoring, report rendering and counterexamples; no provider calls or file modifications in the audit turn.
+
+Context:
+tool=OpenCode
+model=azure/gpt-6-astra
+branch=claude/eager-cray-7fhtkf
+repo_root=C:\Users\amogh\Desktop\hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none
+
+## [2026-10-25T11:29:23.976369+00:00] Specs 0022-0025 and Claude implementation handoff
+
+User Prompt (verbatim, secrets redacted):
+Give me the Specs files and the handoff prompt telling Claude which branch of the project to be wokring on which files to read for example @AGENTS.md @CLAUDE.md and so on. Also Once done, push the updated docs
+
+Attachments: AGENTS.md and CLAUDE.md (large file bodies referenced per section 5.4; original attachments retained in the session trace).
+
+Agent Response Summary:
+Switched to claude/specs-0017-0021-5s3kpe and pulled/rebased from origin, confirming 88a357ea152601aeca3ce5cc98e0fd764597b1c6 before documentation edits. Created all four files for specs 0022-0025, a branch-specific Claude handoff and the scoped corrective-pass review; updated workflow/status/design/morning-report pointers. Checked Markdown links/spec structure, unchanged protected artifact hashes and git diff whitespace, and reran the two documented component reproductions successfully without inference or provider calls. Restored delayed Plan-mode logging transparently and verified native OpenCode export metadata; preparing the required structured trace checkpoint and documentation commit/push, whose actual publication result will be verified before the final response.
+
+Actions:
+* git switch --track origin/claude/specs-0017-0021-5s3kpe; git pull --rebase origin claude/specs-0017-0021-5s3kpe; git rev-parse HEAD.
+* Added code/docs/specs/0022-observation-time-cutoffs, 0023-unknown-copy-treatment, 0024-final-artifact-hash-verification, 0025-selected-output-configuration-guards (requirements/design/tasks/status).
+* Added code/docs/CORRECTIVE_HANDOFF_0022_0025.md and code/docs/reviews/0002-corrective-pass-review.md; updated CLAUDE.md, historical handoff, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md and trace README.
+* Python -B documentation/link/hash checks and component reproductions; git diff --check. Runtime code and preserved release artifacts were not edited.
+* Inspected OpenCode native session exports and metadata for this exact session; targeted-redaction pre-commit trace export required next.
+
+Context:
+tool=OpenCode
+model=azure/gpt-6-astra
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=C:\Users\amogh\Desktop\hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

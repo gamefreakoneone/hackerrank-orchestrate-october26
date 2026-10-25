@@ -1,6 +1,18 @@
 # MORNING_REPORT — overnight run and corrective pass
 
-## Corrective pass (specs 0017–0021) — current progress
+## Current next action — specs 0022–0025 (not implemented)
+
+The targeted review of `88a357e` confirmed **1 blocker / 3 major defects**: future-dated account observations affect
+case_135 and case_383; unknown per-copy flow/restore treatment is dropped; report loading omits final diagnostics/
+ledger hash checks; selected-output guards permit sample/ablation modes. Full audit/sign-off remains incomplete.
+
+Read [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
+[review 0002](reviews/0002-corrective-pass-review.md). **Work/push on `claude/specs-0017-0021-5s3kpe`; start 0022.**
+All four new specs are Not started. The preserved output is **NO-GO** despite passing structural checks. Its saved
+hashes, sample scores and report rendering were independently reproduced in memory; pytest/CLI clean-room results
+were not rerun. Fix code first, preserve historical artifacts and ask before any live provider/release run.
+
+## Historical corrective pass (specs 0017–0021)
 
 Branch `claude/specs-0017-0021-5s3kpe` (Claude Code cloud session, started from `origin/claude/eager-cray-7fhtkf`
 @ `bf79d4a`). Everything below the next table is the **historical overnight report** (code `2a72256`/`375604e`); its

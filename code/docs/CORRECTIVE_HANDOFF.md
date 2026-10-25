@@ -1,5 +1,10 @@
 # Corrective implementation handoff — specs 0017–0021
 
+> Historical handoff for the completed first correction pass. For current work, read
+> [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
+> [review 0002](reviews/0002-corrective-pass-review.md). Continue on `claude/specs-0017-0021-5s3kpe` with spec 0022;
+> the original kickoff below is preserved as history, not an instruction to return to the old baseline.
+
 The overnight implementation at `2a722566e1367f409a5b3789ce61c1c19c566cfc` has been fast-forwarded into
 `claude/eager-cray-7fhtkf`. The initial audit is `reviews/0001-implementation-review.md`.
 This document and the five specs are a **documentation handoff**: their corrections are not implemented yet.
