@@ -1,6 +1,6 @@
 # MORNING_REPORT — overnight run and corrective pass
 
-## Current next action — specs 0022–0025 (0022 done; 0023 next)
+## Current next action — specs 0022–0025 (0022–0023 done; 0024 next)
 
 The targeted review of `88a357e` confirmed **1 blocker / 3 major defects**: future-dated account observations affect
 case_135 and case_383; unknown per-copy flow/restore treatment is dropped; report loading omits final diagnostics/
@@ -8,13 +8,14 @@ ledger hash checks; selected-output guards permit sample/ablation modes. Full au
 
 Read [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
 [review 0002](reviews/0002-corrective-pass-review.md). **Work/push on `claude/specs-0017-0021-5s3kpe`; start 0022.**
-0022 is Completed; 0023–0025 are Not started. The preserved output is **NO-GO** despite passing structural checks. Its saved
+0022–0023 are Completed; 0024–0025 are Not started. The preserved output is **NO-GO** despite passing structural checks. Its saved
 hashes, sample scores and report rendering were independently reproduced in memory; pytest/CLI clean-room results
 were not rerun. Fix code first, preserve historical artifacts and ask before any live provider/release run.
 
 | Spec | Status | Measured result (offline/no-cache sample dev split, same configuration before/after) |
 |---|---|---|
 | 0022 observation-time cutoffs | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (sample outputs byte-identical); 7/8 new regressions failed on the baseline, all pass; full offline run changes exactly case_135, case_383 INCOMPLETE → COMPLETE; saved release untouched |
+| 0023 unknown copy treatment | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (byte-identical); 7/7 new regressions failed on the 0022 baseline, all pass; full offline run 0 changed rows, 0/203 flow/backup obligations with an unknown copy; live vision configuration not measured |
 
 ## Historical corrective pass (specs 0017–0021)
 

@@ -51,7 +51,7 @@ class Assessment:
     def flags(self) -> list[str]:
         flags = set(self.account_link.flags) | set(self.subject.flags)
         obligations = self.policy.obligations
-        if any(o.current == "UNKNOWN" for o in obligations):
+        if any(o.current == "UNKNOWN" or any(c.current == "UNKNOWN" for c in o.copy_states) for o in obligations):
             flags.add("UNKNOWN_STATE")
         if any(o.required_record_is_preserved is False for o in obligations):
             flags.add("REQUIRED_RECORD_MISSING")

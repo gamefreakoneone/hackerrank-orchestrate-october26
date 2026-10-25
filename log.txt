@@ -1943,3 +1943,24 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T11:44:44Z] Spec 0023: preserve unknown treatment for every copy (same turn)
+
+User Prompt (verbatim, secrets redacted):
+(same user turn as the "Spec 0022: enforce observation-time cutoffs" entry above; prompt logged there verbatim)
+
+Agent Response Summary:
+Verified 0022 on the remote (90f026c), read all four 0023 files and review M1. DISABLED/BLOCKED obligations now evaluate every copy with presence or treatment facts; a present copy with no enabled/restore_allowed fact is UNKNOWN instead of being dropped, known violations still win and are reported, and any unknown copy raises UNKNOWN_STATE. 7/7 new regressions failed on the baseline and pass; full suite 178 passed / 2 skipped; dev metrics unchanged (15/20, F1 0.899, exact 5/20); full offline run 0 changed rows and 0/203 unknown copies (live vision configuration not measured).
+
+Actions:
+* Edited code/ghostaudit/obligations.py, pipeline.py; added code/tests/test_unknown_copy_treatment.py.
+* Ran run_eval.py/score.py offline --no-cache before/after (runs/corrective/0023_*), full offline main.py, pytest.
+* Updated spec 0023 status/tasks, FEATURE_STATUS.md, MORNING_REPORT.md, TECHNICAL_DESIGN.md.
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

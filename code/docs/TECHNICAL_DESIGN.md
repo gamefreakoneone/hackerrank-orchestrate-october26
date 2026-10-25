@@ -4,7 +4,7 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Next correction pass — 0022 implemented; 0023–0025 planned
+## Next correction pass — 0022–0023 implemented; 0024–0025 planned
 
 Targeted audit of `88a357e`: [reviews/0002-corrective-pass-review.md](reviews/0002-corrective-pass-review.md).
 Execution handoff: [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md).
@@ -14,7 +14,7 @@ the implemented Key Contracts or assert that the runtime already satisfies them.
 | Owner | Planned contract correction | Required evidence |
 |---|---|---|
 | 0022 (**implemented**) | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
-| 0023 | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
+| 0023 (**implemented**) | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
 | 0024 | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
 | 0025 | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
 
@@ -207,6 +207,14 @@ a compliant kept record cites a present compliant copy. Findings and remediation
 recreate a missing record, so none is invented — only the future verification step remains. A later absence of the
 same copy supersedes an older enabled/restorable fact.
 
+Flow / restore treatment per copy (0023, `obligations.process_copy_state`): the copy set for DISABLED / BLOCKED is
+every copy with a presence **or** a treatment fact. Per copy: a later absence ⇒ ABSENT; else its enabled /
+restore_allowed fact ⇒ ACTIVE or the required state; a copy known present with no treatment fact ⇒ UNKNOWN (rule
+`presence_without_treatment`, its presence proof kept as provenance only — never as a disabled/blocked proof).
+Aggregation: a known violation still wins and is reported (finding + remediation cover the whole resource); with no
+violation, any UNKNOWN copy makes the obligation UNKNOWN (unsatisfied, empty proof, no invented finding). Any UNKNOWN
+copy raises `UNKNOWN_STATE` even when another copy's violation sets `current=ACTIVE`.
+
 Per-copy aggregation (0017): each storage copy's latest fact gets its own current state; any copy whose state does
 not satisfy `required` makes the obligation unsatisfied and is the cited `proof` (latest violating copy); otherwise
 the latest compliant copy is cited. No established copy ⇒ UNKNOWN. Other copies' proofs stay in `copy_states`.
@@ -235,7 +243,7 @@ proof. `BLOCKER_FLAGS` is declared once in `models.py` (planner and validator sh
 |---|---|---|---|
 | `ACCOUNT_UNGROUNDED` | no grounded subject→account link (§5 Q3); covers "no candidate at all" | INCOMPLETE (blocker) | **no account steps**; ranked candidates go to diagnostics only (ablation `--ungrounded-account-steps ranked` in 0015 measures emitting the top candidate instead) |
 | `ACCOUNT_MULTI_GROUNDED` | >1 grounded account | not a blocker | the most recent grounded link is the **current** account; every older grounded account stays an obligation (**historical account**, may still retain data) unless evidence excludes it (linked to another user, or proven the same record); never dropped silently |
-| `UNKNOWN_STATE` | no eligible file / coverage / state-check activity establishes the state | INCOMPLETE (blocker) | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
+| `UNKNOWN_STATE` | no eligible file / coverage / state-check activity establishes the state, or (0023) some copy's flow/restore treatment is unknown | INCOMPLETE (blocker) | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
 | `POLICY_UNDEFINED` | a rule condition evaluates FALSE (the rules define no action for that branch) | INCOMPLETE (blocker) | no step for that resource; flagged for review — code does not invent an action |
 | `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE (blocker) | `[]` |
 | `REQUIRED_RECORD_MISSING` | 0018: a record the policy keeps is absent in every established copy, or a tombstone lost the subject's stable user_id | INCOMPLETE (blocker) | no finding / remediation for it (no operation can recreate it); VERIFICATION step (required end state) with `""` |
@@ -496,3 +504,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0020** Evaluation reports are rendered only from a hashed `evaluation_inputs.json` bundle (captured at a committed revision by `capture_inputs.py`) plus the final manifest; `make_reports.py` makes no model call, verifies hashes/coverage/configurations/revisions and fails with exit 1 on any mismatch; claims are computed from per-case scores; a revision mismatch must be acknowledged and is labelled "NOT a unified release" | Review finding 4: false exact-plan claim, `runs/` dependency, validator command without diagnostics |
 | 2026-10-25 | **0021** Candidate-first publication in `main.py`; release = candidate + diagnostics + usage ledger + same-revision evaluation inputs + reports, promoted only by `finalize_run.py` after validation; producing revision = committed code checked by `uncommitted_producing_code`; hashed artifacts stored `-text`; corrected cold run `0021_candidate_20261025T104010Z` at `b90914b` selected | Review finding 5 and the CRLF checksum observation; the run is the default configuration only |
 | 2026-10-25 | **0022** Eligibility needs availability *and* observation time ≤ audit_at (`index.eligible`, one rule for discovery, account linking, category/policy selection, per-copy state, coverage and citations); the `min(observed_at, captured_at)` clipping in `timeline.observation_time`/`coverage_time` deleted in favour of `index.state_observed_at`; bundle records dated after their snapshot name no covered subject; business dates (retention_until) stay fields; parser cache 0017.2 → 0022.1 | Review B1: a FOUND row dated two days after its file's capture overrode the at-cutoff NOT_FOUND (case_135, case_383); full offline run changes exactly those two rows INCOMPLETE → COMPLETE |
+| 2026-10-25 | **0023** DISABLED / BLOCKED take every copy with presence or treatment facts; a present copy lacking an enabled / restore_allowed fact is UNKNOWN (not dropped); violations still win and are reported; any UNKNOWN copy blocks COMPLETE (`UNKNOWN_STATE`); treatment-only copy selection and the all-absent special case deleted | Review M1: a compliant primary hid an unchecked failover replica (satisfied=True, COMPLETE). Offline full run: 203 flow/backup obligations, 0 unknown copies, 0 changed rows; live PNG/vision configuration not measured |

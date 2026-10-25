@@ -1,13 +1,13 @@
 # Spec 0023 — Unknown copy treatment: tasks
 
-- [ ] Verify 0022 is completed/pushed; read this spec and review M1.
-- [ ] Capture comparable before/dev metrics and reproduce both missing-treatment-copy counterexamples.
-- [ ] Represent every relevant copy and aggregate uncertainty without suppressing established violations.
-- [ ] Update internal diagnostics/flags/contracts and direct consumers; remove superseded selection logic.
-- [ ] Add planned regressions and run focused checks plus after/dev scoring.
-- [ ] Measure affected obligations using participant evidence; label parser/vision configuration and scope.
-- [ ] Update status/tasks/FEATURE_STATUS/MORNING_REPORT; append log and export/verify the trace.
-- [ ] Commit `spec 0023: preserve unknown treatment for every copy`, push and verify before 0024.
+- [x] Verify 0022 is completed/pushed; read this spec and review M1.
+- [x] Capture comparable before/dev metrics and reproduce both missing-treatment-copy counterexamples.
+- [x] Represent every relevant copy and aggregate uncertainty without suppressing established violations.
+- [x] Update internal diagnostics/flags/contracts and direct consumers; remove superseded selection logic.
+- [x] Add planned regressions and run focused checks plus after/dev scoring.
+- [x] Measure affected obligations using participant evidence; label parser/vision configuration and scope.
+- [x] Update status/tasks/FEATURE_STATUS/MORNING_REPORT; append log and export/verify the trace.
+- [x] Commit `spec 0023: preserve unknown treatment for every copy`, push and verify before 0024.
 
 ## Validation commands
 

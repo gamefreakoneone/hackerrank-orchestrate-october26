@@ -1,7 +1,7 @@
 """Discovered resources + rules + state → Obligations (specs 0011, 0017, 0018; TECHNICAL_DESIGN §3.4)."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from ghostaudit.identity import Subject
 from ghostaudit.models import CopyState, CurrentState, Obligation, RequiredState
@@ -49,15 +49,22 @@ def current_state_by_physical_copy(required: RequiredState, state: ResourceState
                                    subject: Subject) -> dict[str, tuple[CurrentState, Fact]]:
     presence = state.presence_by_physical_copy
     if required in ("DISABLED", "BLOCKED"):
-        facts = state.enabled_by_physical_copy if required == "DISABLED" else state.restorable_by_physical_copy
-        states = {copy: ("ACTIVE" if fact.value else required, fact) for copy, fact in facts.items()}
-        for copy, fact in presence.items():          # a later absence: the flow / archive no longer exists there
-            if fact.value == "absent" and copy in states and fact.observed_at > states[copy][1].observed_at:
-                states[copy] = ("ABSENT", fact)
-        if not states and presence and all(fact.value == "absent" for fact in presence.values()):
-            states = {copy: ("ABSENT", fact) for copy, fact in presence.items()}
-        return states
+        treatment = state.enabled_by_physical_copy if required == "DISABLED" else state.restorable_by_physical_copy
+        return {copy: process_copy_state(required, presence.get(copy), treatment.get(copy))
+                for copy in sorted(presence.keys() | treatment.keys())}
     return {copy: (presence_current_state(required, fact, subject), fact) for copy, fact in presence.items()}
+
+
+def process_copy_state(required: RequiredState, presence_fact: Fact | None,
+                       treatment_fact: Fact | None) -> tuple[CurrentState, Fact]:
+    """One copy of a flow / archive (0023): a later absence means it no longer exists there; else its treatment fact
+    decides; a copy known present with no treatment fact is UNKNOWN — the presence row proves existence only."""
+    if presence_fact is not None and presence_fact.value == "absent" and (
+            treatment_fact is None or presence_fact.observed_at > treatment_fact.observed_at):
+        return "ABSENT", presence_fact
+    if treatment_fact is not None:
+        return ("ACTIVE" if treatment_fact.value else required), treatment_fact
+    return "UNKNOWN", replace(presence_fact, rule="presence_without_treatment")
 
 
 def record_is_preserved(category: str, state: ResourceState, subject: Subject) -> bool | None:
@@ -75,13 +82,16 @@ def _latest(candidates):
 
 def current_state(required: RequiredState, state: ResourceState, by_copy: dict[str, tuple[CurrentState, Fact]],
                   preservation_required: bool) -> tuple[CurrentState, Fact | None]:
-    """A treatment violation in any copy wins and is the cited proof. A kept record that is absent in every copy is
-    ABSENT (never relabelled as treated); otherwise a present compliant copy is cited. Nothing established ⇒ UNKNOWN."""
+    """A treatment violation in any copy wins and is the cited proof; otherwise any copy with unknown treatment makes
+    the whole obligation UNKNOWN. A kept record that is absent in every copy is ABSENT (never relabelled as treated);
+    otherwise a present compliant copy is cited. Nothing established ⇒ UNKNOWN."""
     if not by_copy:
         return "UNKNOWN", None
-    violating = [cf for cf in by_copy.values() if cf[0] not in TREATMENT_SATISFIED_BY[required]]
+    violating = [cf for cf in by_copy.values() if cf[0] not in TREATMENT_SATISFIED_BY[required] | {"UNKNOWN"}]
     if violating:
         return _latest(violating)
+    if any(copy_current == "UNKNOWN" for copy_current, _ in by_copy.values()):
+        return "UNKNOWN", None                       # an unresolved copy: nothing proves the required treatment
     if not preservation_required:
         return _latest(by_copy.values())
     presence = state.presence_by_physical_copy
