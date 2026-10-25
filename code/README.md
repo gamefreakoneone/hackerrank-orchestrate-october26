@@ -59,14 +59,30 @@ Each run also writes `<out>.diagnostics.jsonl` (per-case flags, account link, ob
 
 ```bash
 python code/evaluation/run_eval.py --split dev        # samples: run + score (regression set, not a holdout)
-python code/evaluation/score.py runs/sample.csv dataset/sample_output.csv --split all
-python code/evaluation/run_custom.py                  # synthetic custom cases (overlay on a temp dataset copy)
-python code/tools/discovery_report.py --split all     # discovery + account linkage vs samples
-python code/tools/state_report.py                     # reconstructed state/proof vs samples
+python code/evaluation/score.py runs/sample.csv dataset/sample_output.csv --split all --diagnostics runs/sample.diagnostics.jsonl
+python code/evaluation/run_custom.py                  # synthetic custom cases -> runs/custom/results.{md,json}
+python code/tools/discovery_report.py --split all     # end-to-end discovery + account linkage vs samples, miss causes
+python code/tools/state_report.py                     # ORACLE-ASSISTED component check (given gold resources/operations)
 python code/tools/intent_report.py runs/all.diagnostics.jsonl
-python -c "import sys;sys.path.insert(0,'code');from ghostaudit.validate import cli;cli()"   # validate ./output.csv
-python code/evaluation/make_reports.py                # evaluation/evaluation_report.md + usage_report.md
+# validate an output together with the diagnostics of the run that produced it (blocker flags turn
+# "INCOMPLETE without findings" into warnings); for the selected output:
+python -c "import sys;sys.path.insert(0,'code');from ghostaudit.validate import cli;cli()" output.csv --diagnostics code/evaluation/final_run/diagnostics.jsonl
 ```
+
+Reports are rebuilt from preserved, hashed artifacts only (no model calls, no `runs/` dependency):
+
+```bash
+# 1. capture evaluation inputs at a committed revision (runs the sample configurations, custom cases, discovery
+#    report and test suites; model calls come from the cache where present) -> <bundle>/evaluation_inputs.json
+python code/evaluation/capture_inputs.py --bundle-directory code/evaluation/corrective_run
+# 2. render (offline). Missing/altered/mismatched inputs exit 1. Stage elsewhere to keep the selected reports.
+python code/evaluation/make_reports.py --evaluation-inputs code/evaluation/corrective_run/evaluation_inputs.json \
+    --report-output-directory code/evaluation/corrective_run/staged_reports --allow-revision-mismatch
+```
+
+Without `--evaluation-inputs`, `make_reports.py` uses the path named by the final manifest's `evaluation_inputs` field.
+`--allow-revision-mismatch` is needed only when the evaluation inputs and the selected final run come from different
+code revisions; the report is then labelled "NOT a unified release".
 
 ## Test
 

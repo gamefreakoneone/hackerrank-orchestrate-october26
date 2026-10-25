@@ -1,13 +1,18 @@
-"""Render evaluation/evaluation_report.md and evaluation/usage_report.md from runs/ artifacts.
+"""Render evaluation_report.md and usage_report.md from preserved, hashed artifacts. No model or provider call.
 
 python code/evaluation/make_reports.py [--final-manifest code/evaluation/final_run/manifest.json]
+    [--evaluation-inputs PATH/evaluation_inputs.json] [--report-output-directory DIR] [--allow-revision-mismatch]
+
+The final-run manifest names the selected output, diagnostics and usage ledger; the evaluation inputs
+(written by capture_inputs.py) name the sample, ablation, custom, discovery and test results with SHA-256 values.
+A missing, altered or mismatched input stops the build with an explicit error (exit code 1).
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
-import subprocess
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -15,57 +20,110 @@ from pathlib import Path
 EVALUATION_DIR = Path(__file__).resolve().parent
 CODE_DIR = EVALUATION_DIR.parent
 REPO_ROOT = CODE_DIR.parent
-RUNS = REPO_ROOT / "runs"
 sys.path.insert(0, str(CODE_DIR))
 sys.path.insert(0, str(EVALUATION_DIR))
 
 import score  # noqa: E402
+from capture_inputs import SAMPLE_CONFIGURATIONS  # noqa: E402
 from ghostaudit.llm.ledger import load_rows, summarize  # noqa: E402
 
-GOLD = REPO_ROOT / "dataset" / "sample_output.csv"
-ABLATIONS = [("default (submitted configuration)", "sample"),
-             ("deterministic-only: no model calls (`--offline --no-cache`)", "ablation_deterministic"),
-             ("no historical identifiers (`--ablate no-history`)", "ablation_no-history"),
-             ("trust activity claims (`--ablate trust-claims`)", "ablation_trust-claims"),
-             ("ranked guessed accounts, INCOMPLETE only (`--ungrounded-account-steps ranked`)", "ablation_ranked-accounts")]
+PRICING_PATH = CODE_DIR / "config" / "pricing.yaml"
+DISCOVERY_RECALL_TARGET = 0.85     # spec 0010 acceptance target for sample resource recall
+ABLATION_LABELS = {
+    "deterministic": "deterministic-only: no model calls (`--offline --no-cache`)",
+    "no-history": "no historical identifiers (`--ablate no-history`)",
+    "trust-claims": "trust activity claims (`--ablate trust-claims`)",
+    "ranked-accounts": "ranked guessed accounts, INCOMPLETE only (`--ungrounded-account-steps ranked`)",
+}
 
-IMPROVEMENTS = """| Spec / commit | Failure found | Change | Measured effect |
+HISTORICAL_IMPROVEMENTS = """Recorded at the commit that made each change (sample regression set; "oracle-assisted" = the check was
+given the gold resource ids and operations, so it measures a component, not end-to-end discovery):
+
+| Spec / commit | Failure found | Change | Measured effect (as recorded then) |
 |---|---|---|---|
-| 0007 `2cb0e29` | Six log formats; lookup key and resource id sit on different lines of one trace | one line parser per format, records = trace_id groups | sample identifier reach 76/111 (Phase-0b reference 77/111) |
-| 0009 `04c26e4` | PNG screens were unread; decoy company emails visible on screens | Gemini extraction (cached) + regex/identity-universe revalidation | 23 PNG records; none of the 8 previously unreachable resources appears in a PNG (reach stays 103/111) |
-| 0010 `f63f611` | `cache_lookup result=miss` merged into a trace was read as "record absent" (case_15 audit_record_1596) | infrastructure lines excluded from trace records | state agreement 99 → 104/111 (with the next two fixes) |
-| 0010 `f63f611` | readback `*_read_completed` events not recognised as presence (case_03, case_18) | completed reads count as presence | gold-cited proofs 71 → 75/75 |
-| 0010 `f63f611` | a later primary-only inventory overrode a replica that still held the account (case_05 replica drift) | omission must cover the replica where the record was last seen | case_05 PRESENT with evidence_54, as gold |
-| 0012 `14df3a9` | generic snapshots claimed coverage of collections absent from the whole file (tombstone_17 "absent") | coverage only for collections present in that snapshot | no score change; removes an unsupported absence proof |
-| 0013 `0623153` | negated requests ("not asking for deletion") contain deletion words | keyword check is a cross-check only; disagreements adjudicated by Azure | 10/10 non-deletion requests and 32/32 sample deletions classified correctly |
-| 0010–0012 (kept) | 20/32 samples (342/508 deletion requests in the final run) have no grounded subject→account link | **not changed**: ranked guesses stay in diagnostics (contract) | status capped at the conditional bound 23/32; see the ranked-account ablation |
+| 0007 `2cb0e29` | Six log formats; lookup key and resource id sit on different lines of one trace | one line parser per format, records = trace_id groups | sample identifier reach 76/111 |
+| 0009 `04c26e4` | PNG screens were unread; decoy company emails visible on screens | Gemini extraction (cached) + regex/identity-universe revalidation | 23 PNG records; none of the 8 unreachable resources appears in a PNG |
+| 0010 `f63f611` | `cache_lookup result=miss` inside a trace read as "record absent"; completed reads not counted as presence | infrastructure lines excluded; completed reads count as presence | oracle-assisted state agreement 99 → 104/111, proofs 71 → 75/75 |
+| 0012 `14df3a9` | generic snapshots claimed coverage of collections absent from the whole file | coverage only for collections present in that snapshot | no score change; removes an unsupported absence proof |
+| 0013 `0623153` | negated requests contain deletion words | keyword check is a cross-check only; disagreements adjudicated by Azure | 10/10 non-deletion requests and 32/32 sample deletions classified correctly |
+| 0017 `4f2a05a` | a newer primary-only read or clean record hid an uncleared replica; a newer package of an older read overwrote newer state | state per storage copy, violation wins; observation-time ordering; bundle omissions scoped to their subjects | sample outputs unchanged; full-dataset 3 obligations changed (0 COMPLETE → INCOMPLETE); oracle-assisted state 103/111 |
+| 0018 `b0c7f27` | absence satisfied REDACT / ANONYMIZE / retained-backup obligations | separate preservation predicate, REQUIRED_RECORD_MISSING blocker | sample outputs unchanged; 0 full-dataset changes |
+| 0019 `52a1854` | 34 sample resources ungrounded | investigation only: no defensible pre-cutoff link exists (`DISCOVERY_GAP_REVIEW.md`) | recall unchanged; the 0010 ≥85% target stays unmet |
+| 0020 | reports claimed every grounded sample had an exact plan and depended on ignored `runs/` files | claims derived from per-case scores; hashed evaluation inputs; explicit input errors | this report |
 """
 
 
-def table(rows: list[list[str]], header: list[str]) -> str:
+def fail(message: str) -> None:
+    raise SystemExit(f"make_reports: {message}")
+
+
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def table(rows: list[list], header: list[str]) -> str:
     return "\n".join(["| " + " | ".join(header) + " |", "|" + "---|" * len(header),
                       *["| " + " | ".join(map(str, r)) + " |" for r in rows]])
 
 
-def score_file(name: str, split: str) -> dict | None:
-    path = RUNS / f"{name}.csv"
+def verified_artifact(directory: Path, relative_path: str, expected_sha256: str, role: str) -> Path:
+    path = directory / relative_path
     if not path.is_file():
-        return None
-    gold = score.read_rows(GOLD)
-    return score.score(score.read_rows(path), gold, score.split_case_ids(split, gold),
-                       score.read_diagnostics(path.with_suffix(".diagnostics.jsonl")))
+        fail(f"{role} is missing: {path}")
+    if sha256_of(path) != expected_sha256:
+        fail(f"{role} {path} does not match its recorded sha256 (artifact changed after capture)")
+    return path
 
 
-def guessed_link_accuracy(name: str) -> str:
-    diagnostics = score.read_diagnostics(RUNS / f"{name}.diagnostics.jsonl")
-    gold = score.read_rows(GOLD)
-    outcomes = Counter()
-    for case_id, record in diagnostics.items():
-        guess = record.get("guessed_account")
-        if guess:
-            gold_accounts = {s["resource_id"] for s in gold[case_id][1] if s["system_id"] == "account_service"}
-            outcomes["right" if guess in gold_accounts else "wrong"] += 1
-    return f"{outcomes['right']} right / {outcomes['wrong']} wrong guesses"
+def load_final_run(manifest_path: Path, repository_root: Path) -> dict:
+    if not manifest_path.is_file():
+        fail(f"final-run manifest is missing: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    output = repository_root / "output.csv"
+    if not output.is_file() or sha256_of(output) != manifest["output_sha256"]:
+        fail(f"{output} does not match the selected final run {manifest['run_id']} (sha256 differs or file missing)")
+    for role in ("diagnostics", "usage_ledger"):
+        if not (repository_root / manifest[role]).is_file():
+            fail(f"final-run {role} is missing: {repository_root / manifest[role]}")
+    output_case_ids = set(score.read_rows(output))
+    diagnostics = score.read_diagnostics(repository_root / manifest["diagnostics"])
+    if set(diagnostics) != output_case_ids:
+        fail("final-run diagnostics do not cover exactly the output's case ids")
+    return {"manifest": manifest, "output": output, "diagnostics": diagnostics,
+            "usage_rows": load_rows(repository_root / manifest["usage_ledger"])}
+
+
+def load_evaluation_inputs(inputs_path: Path, gold: dict) -> dict:
+    if not inputs_path.is_file():
+        fail(f"evaluation inputs are missing: {inputs_path} (run code/evaluation/capture_inputs.py)")
+    inputs = json.loads(inputs_path.read_text(encoding="utf-8"))
+    directory = inputs_path.parent
+    missing_keys = sorted({"code_revision", "captured_at", "provider_configuration", "sample_runs",
+                           "custom_results"} - set(inputs))
+    if missing_keys:
+        fail(f"evaluation inputs {inputs_path} lack required fields {missing_keys}")
+    if "default" not in inputs["sample_runs"]:
+        fail("evaluation inputs have no default sample run (required)")
+    runs = {}
+    for name, entry in sorted(inputs["sample_runs"].items()):
+        if SAMPLE_CONFIGURATIONS.get(name) != entry["pipeline_args"]:
+            fail(f"sample run {name!r} declares {entry['pipeline_args']}, expected {SAMPLE_CONFIGURATIONS.get(name)}")
+        predictions = score.read_rows(verified_artifact(directory, entry["predictions"], entry["predictions_sha256"],
+                                                        f"{name} predictions"))
+        diagnostics = score.read_diagnostics(verified_artifact(directory, entry["diagnostics"],
+                                                               entry["diagnostics_sha256"], f"{name} diagnostics"))
+        if set(predictions) != set(gold) or set(diagnostics) != set(gold):
+            fail(f"{name} predictions/diagnostics do not cover exactly the {len(gold)} sample case ids")
+        runs[name] = {"predictions": predictions, "diagnostics": diagnostics, "model_calls": entry.get("model_calls")}
+    custom_entry = inputs["custom_results"]
+    custom = json.loads(verified_artifact(directory, custom_entry["path"], custom_entry["sha256"],
+                                          "custom results").read_text(encoding="utf-8"))
+    discovery = None
+    if inputs.get("discovery_report"):
+        entry = inputs["discovery_report"]
+        discovery = json.loads(verified_artifact(directory, entry["path"], entry["sha256"],
+                                                 "discovery report").read_text(encoding="utf-8"))
+    return {**inputs, "runs": runs, "custom": custom, "discovery": discovery, "path": inputs_path}
 
 
 def metric_row(label: str, result: dict) -> list[str]:
@@ -77,173 +135,246 @@ def metric_row(label: str, result: dict) -> list[str]:
             f"{result['sequence_exact']:.3f} ({t.get('sequence_ok', 0)}/{result['cases']})", f"{result['mean_lcs']:.3f}"]
 
 
-def output_distribution(path: Path) -> Counter:
-    with path.open(encoding="utf-8", newline="") as handle:
-        return Counter(r["deletion_status"] for r in csv.DictReader(handle))
+def evidence_mismatches(predictions: dict, gold: dict) -> tuple[int, int]:
+    """(matched steps citing different evidence, of which in gold-COMPLETE cases predicted INCOMPLETE)."""
+    total = in_unproven_complete = 0
+    for case_id, (gold_status, gold_steps) in gold.items():
+        predicted_status, predicted_steps = predictions[case_id]
+        predicted_by_key = {score.step_key(s): s for s in predicted_steps}
+        for step in gold_steps:
+            other = predicted_by_key.get(score.step_key(step))
+            if other is not None and other["evidence_id"] != step["evidence_id"]:
+                total += 1
+                in_unproven_complete += gold_status == "COMPLETE" and predicted_status == "INCOMPLETE"
+    return total, in_unproven_complete
 
 
-def final_output_path(manifest: dict) -> Path:
-    """The promoted root output.csv; fail fast if it is not byte-identical to the selected run."""
-    import hashlib
-    path = REPO_ROOT / "output.csv"
-    if hashlib.sha256(path.read_bytes()).hexdigest() != manifest["output_sha256"]:
-        raise SystemExit("output.csv does not match the selected final run (sha256 differs)")
-    return path
+def guessed_link_accuracy(diagnostics: dict, gold: dict) -> str:
+    outcomes = Counter()
+    for case_id, record in diagnostics.items():
+        if record.get("guessed_account"):
+            gold_accounts = {s["resource_id"] for s in gold[case_id][1] if s["system_id"] == "account_service"}
+            outcomes["right" if record["guessed_account"] in gold_accounts else "wrong"] += 1
+    return f"{outcomes['right']} right / {outcomes['wrong']} wrong guesses"
 
 
-def evaluation_report(manifest: dict) -> str:
-    final_output = final_output_path(manifest)
-    final_diagnostics = score.read_diagnostics(REPO_ROOT / manifest["diagnostics"])
-    flags = Counter(f for d in final_diagnostics.values() for f in d.get("flags", []))
-    links = Counter(d["account_link"]["via"] for d in final_diagnostics.values() if "account_link" in d)
-    splits = {split: score_file("sample", split) for split in ("dev", "holdout", "all")}
+def sample_claims(result: dict, predictions: dict, gold: dict) -> str:
+    per_case, t = result["per_case"], result["totals"]
+    misses = [c for c in per_case if not c["status_ok"]]
+    unproven_complete = [c for c in misses if c["gold"] == "COMPLETE" and c["account"] == "ungrounded"]
+    grounded = [c for c in per_case if c["account"] in ("correct", "wrong")]
+    grounded_exact = [c for c in grounded if c["sequence_ok"]]
+    mismatched, mismatched_unproven = evidence_mismatches(predictions, gold)
+    field = result["field_accuracy"]
+    return f"""- **Case-level deletion-status accuracy:** {t.get('status_ok', 0)}/{result['cases']} \
+({result['status_accuracy']:.3f}). {len(misses)} status misses; {len(unproven_complete)} of them are gold-COMPLETE cases \
+whose account has no grounded link (ACCOUNT_UNGROUNDED keeps them INCOMPLETE by contract).
+- **Account linkage (separate metric):** {result['account_linkage']} over {result['cases']} cases; precision of grounded \
+links {result['account_linkage_precision']:.3f}.
+- **Step-level accuracy** on keys (operation, system_id, resource_id): precision {result['step_precision']:.3f} \
+({t.get('matched', 0)}/{t.get('pred_steps', 0)} predicted steps), recall {result['step_recall']:.3f} \
+({t.get('matched', 0)}/{t.get('gold_steps', 0)} gold steps), F1 {result['step_f1']:.3f}.
+- **Field-level accuracy on the {t.get('matched', 0)} matched steps:** phase {field['phase']:.3f}, state \
+{field['state']:.3f}, evidence_id {field['evidence_id']:.3f}, step_no {field['step_no']:.3f}. {mismatched} matched steps \
+cite different evidence; {mismatched_unproven} of them are in gold-COMPLETE cases predicted INCOMPLETE (future \
+verification steps carry an empty evidence_id by contract).
+- **Sequence accuracy:** {t.get('sequence_ok', 0)}/{result['cases']} exact ({result['sequence_exact']:.3f}); mean \
+normalized LCS {result['mean_lcs']:.3f}. {len(grounded_exact)} of the {len(grounded)} samples with a grounded account \
+link have an exactly matching plan.
+- Blocker / diagnostic flags (cases): {json.dumps(result['flag_counts'])}."""
+
+
+def discovery_section(discovery: dict | None) -> str:
+    if discovery is None:
+        return "_Not measured in this bundle (no discovery report captured)._"
+    found, total = map(int, discovery["resource_recall"].split("/"))
+    verdict = "met" if found / total >= DISCOVERY_RECALL_TARGET else "**unmet**"
+    return f"""End-to-end discovery on the samples (`code/tools/discovery_report.py`; gold is used only to score):
+resource recall {discovery['resource_recall']} ({found / total:.1%}; spec 0010 target ≥ {DISCOVERY_RECALL_TARGET:.0%}: \
+{verdict}), current accounts {discovery['account_recall']}, other resources {discovery['other_resource_recall']}, \
+{discovery['extra_resources']} extra grounded resources, linkage precision {discovery['linkage_precision']}.
+Miss causes (participant-visible evidence at each audit_at): {json.dumps(discovery['miss_causes'])}.
+See `code/docs/DISCOVERY_GAP_REVIEW.md`."""
+
+
+def custom_section(custom: dict) -> str:
+    results = custom["results"]
+    mark = lambda ok: "pass" if ok else "FAIL"
+    rows = [[r["case"], r["case_id"], r["expected_status"], r["got_status"], mark(r["status_ok"]), mark(r["steps_ok"]),
+             mark(r["flags_ok"]), mark(r["validator_ok"]), " ".join(r["flags"])] for r in results]
+    passed = sum(all((r["status_ok"], r["steps_ok"], r["flags_ok"], r["validator_ok"])) for r in results)
+    cases = len({r["case"] for r in results})
+    return f"""{cases} cases ({len(results)} requests) under `code/evaluation/cases/`, each an overlay on a temporary copy of
+`dataset/` with an expected output written from the rules and a rationale README{' (run offline)' if custom.get('offline') else ''}.
+{passed}/{len(results)} requests fully pass.
+
+{table(rows, ["case", "request", "expected", "got", "status", "steps", "flags", "validator", "flags seen"])}"""
+
+
+def tests_section(test_results: list[dict] | None) -> str:
+    if not test_results:
+        return "_Not measured in this bundle (no recorded test run)._"
+    return table([[t["name"], f"`{t['command']}`", t["exit_code"], t["summary"]] for t in test_results],
+                 ["Suite", "Command", "Exit code", "Result"])
+
+
+def evaluation_report(final: dict, inputs: dict, gold: dict, unified: bool) -> str:
+    manifest = final["manifest"]
+    default = inputs["runs"]["default"]
+    splits = {split: score.score(default["predictions"], gold, score.split_case_ids(split, gold), default["diagnostics"])
+              for split in ("dev", "holdout", "all")}
     header = ["Run", "Status acc", "Account linkage", "Step P / R / F1", "evidence_id acc", "step_no acc",
               "Sequence exact", "Mean LCS"]
-    custom = (RUNS / "custom" / "results.md").read_text(encoding="utf-8") if (RUNS / "custom" / "results.md").is_file() \
-        else "_custom results not found: run `python code/evaluation/run_custom.py`_"
-    metamorphic = subprocess.run([sys.executable, "-m", "pytest", str(CODE_DIR / "tests" / "test_metamorphic.py"), "-q"],
-                                 capture_output=True, text=True, cwd=REPO_ROOT).stdout.strip().splitlines()[-1]
-    metamorphic = metamorphic.split(" in ")[0]
-    all_split = splits["all"]
-    per_field = all_split["field_accuracy"]
     ablation_rows = []
-    for label, name in ABLATIONS:
-        result = score_file(name, "all")
-        if result is not None:
-            row = metric_row(label, result)
-            if name == "ablation_ranked-accounts":
-                row[2] = f"{row[2]} grounded; {guessed_link_accuracy(name)}"
-            ablation_rows.append(row)
-    full_ablations = []
-    for label, name in [("default", "output")] + \
-            [(l, f"all_{n.removeprefix('ablation_')}") for l, n in ABLATIONS[1:]]:
-        path = final_output if label == "default" else RUNS / f"{name}.csv"
-        if path.is_file():
-            distribution = output_distribution(path)
-            full_ablations.append([label if label != "default" else "default (submitted output)",
-                                   distribution["COMPLETE"], distribution["INCOMPLETE"], distribution["NOT_APPLICABLE"]])
+    for name, label in ABLATION_LABELS.items():
+        run = inputs["runs"].get(name)
+        if run is None:
+            ablation_rows.append([label, "not measured", "", "", "", "", "", ""])
+            continue
+        row = metric_row(label, score.score(run["predictions"], gold, score.split_case_ids("all", gold),
+                                            run["diagnostics"]))
+        if name == "ranked-accounts":
+            row[2] = f"{row[2]} grounded; {guessed_link_accuracy(run['diagnostics'], gold)}"
+        ablation_rows.append(row)
+    flags = Counter(f for d in final["diagnostics"].values() for f in d.get("flags", []))
+    links = Counter(d["account_link"]["via"] for d in final["diagnostics"].values() if "account_link" in d)
+    with final["output"].open(encoding="utf-8", newline="") as handle:
+        distribution = Counter(r["deletion_status"] for r in csv.DictReader(handle))
+    provenance = ("The evaluation inputs and the final run come from the **same code revision**." if unified else
+                  "**NOT a unified release:** the evaluation inputs and the selected final run come from different "
+                  "code revisions. Sample metrics below describe the evaluation-input revision, not the code that "
+                  "produced the selected output.")
     return f"""# Evaluation report — Ghost Data Still Exists
 
-Produced by `python code/evaluation/make_reports.py` from the artifacts of the selected final run
-(`{manifest['run_id']}`, code revision `{manifest['git_revision']}`, output sha256 `{manifest['output_sha256']}`).
+Built by `python code/evaluation/make_reports.py` from preserved artifacts (no model calls):
+- selected final run `{manifest['run_id']}`, code revision `{manifest['git_revision']}`, output sha256 `{manifest['output_sha256']}`;
+- evaluation inputs `{inputs['path'].name}` captured {inputs['captured_at']} at code revision `{inputs['code_revision']}`
+  (provider keys present: {', '.join(inputs['provider_configuration']['provider_keys_present']) or 'none'}; default sample
+  run model calls: {json.dumps(default['model_calls'])}).
 
-**Read this first.** The 32 public samples were inspected while designing the system (Phase 0), so every sample number
-below is a **regression-set** result, not untouched validation; the frozen dev (20) / holdout (12) split is reported
-separately but both parts were inspected. The custom and metamorphic cases were written around known risks and are
-**custom validation**, not a holdout. No untouched holdout exists, and nothing here measures hidden-answer accuracy.
+{provenance}
+
+**Read this first.** The 32 public samples were inspected while designing the system, so every sample number is a
+**regression-set** result, not untouched validation; the dev (20) / holdout (12) split was inspected too. Custom and
+metamorphic cases are **custom validation** written around known risks. No untouched holdout exists, and nothing here
+measures hidden-answer accuracy.
 
 ## 1. Sample regression set (default configuration)
 
 {table([metric_row(f"{split} ({splits[split]['cases']} cases)", splits[split]) for split in ("dev", "holdout", "all")], header)}
 
-- **Case-level deletion-status accuracy:** {all_split['status_accuracy']:.3f} on all 32 samples. All misses are gold-COMPLETE
-  cases whose account has no grounded link (ACCOUNT_UNGROUNDED keeps them INCOMPLETE by design); 23/32 is exactly the
-  conditional upper bound recorded before implementation.
-- **Account-linkage accuracy (separate metric):** {all_split['account_linkage']} — precision on grounded links
-  {all_split['account_linkage_precision']:.3f}; the remaining cases have no grounded link in the eligible evidence.
-- **Step-level accuracy** on keys (operation, system_id, resource_id): precision {all_split['step_precision']:.3f}, recall
-  {all_split['step_recall']:.3f}, F1 {all_split['step_f1']:.3f} ({all_split['totals'].get('matched', 0)} matched of
-  {all_split['totals'].get('pred_steps', 0)} predicted / {all_split['totals'].get('gold_steps', 0)} gold steps).
-- **Field-level accuracy on matched steps:** phase {per_field['phase']:.3f}, state {per_field['state']:.3f}, evidence_id
-  {per_field['evidence_id']:.3f}, step_no {per_field['step_no']:.3f}. evidence_id differences are verification steps of
-  gold-COMPLETE cases we keep INCOMPLETE (empty evidence_id by contract); step_no shifts follow from missing steps.
-- **Sequence accuracy:** exact match {all_split['sequence_exact']:.3f}; mean normalized LCS {all_split['mean_lcs']:.3f}.
-  Every sample whose account link is grounded has an exactly matching plan.
-- Blocker / diagnostic flags on samples: {json.dumps(all_split['flag_counts'])}.
+{sample_claims(splits['all'], default['predictions'], gold)}
 
-## 2. Custom validation cases (participant-created, not a holdout)
+## 2. Discovery coverage
 
-Eight cases (nine requests) under `code/evaluation/cases/`, each with an overlay on a temporary copy of `dataset/`, an
-expected output written from the rules and committed before the first run (`d33daa7`), and a rationale README.
+{discovery_section(inputs['discovery'])}
 
-{custom}
+## 3. Custom validation cases (participant-created, not a holdout)
 
-## 3. Metamorphic tests
+{custom_section(inputs['custom'])}
 
-`code/tests/test_metamorphic.py` (current result: `{metamorphic}`): a post-cutoff audit row per subject leaves every output
-unchanged; shuffling the rows of every CSV leaves outputs unchanged; adding an unrelated user's identity and evidence
-leaves outputs unchanged; moving `evidence_54` after every audit_at removes it from all citations and changes only the
-cases that used it as proof, link or snapshot-omission candidate.
+## 4. Recorded test runs
 
-## 4. Ablations (samples, all 32)
+`code/tests/test_metamorphic.py`: a post-cutoff audit row per subject, shuffled CSV rows and an unrelated user's identity
+and evidence leave outputs unchanged; moving `evidence_54` after every audit_at changes only the cases that used it.
+
+{tests_section(inputs.get('test_results'))}
+
+## 5. Ablations (samples, all 32)
 
 {table(ablation_rows, header)}
 
-Notes: the deterministic-only run uses the keyword intent check (marked provisional) and has no PNG facts or category
-fallback. The ranked-account ablation plans the top-ranked guessed account in INCOMPLETE output only (it can never make a
-case COMPLETE); it is never the submitted configuration. Trust-claims injects SUCCESS operational claims as if they were
-observations; on these samples evidence captured after the claims dominates, so only proofs change.
+The deterministic-only run uses the keyword intent check and has no PNG facts or category fallback. The ranked-account
+ablation plans the top-ranked guessed account in INCOMPLETE output only and is never the submitted configuration.
+Trust-claims injects SUCCESS operational claims as if they were observations. Full-dataset ablations are not measured.
 
-Full-dataset status distribution per configuration (518 requests, no answers available):
+## 6. Selected final run diagnostics ({manifest['rows']} requests)
 
-{table(full_ablations, ["Configuration", "COMPLETE", "INCOMPLETE", "NOT_APPLICABLE"])}
-
-## 5. Final run diagnostics (518 requests)
-
-- Status distribution: {dict(output_distribution(final_output))}.
-- Account link: {dict(links)} (non-deletion requests have no link).
+- Status distribution: {dict(sorted(distribution.items()))}.
+- Account link: {dict(sorted(links.items()))} (non-deletion requests have no link).
 - Flags: {dict(sorted(flags.items()))}.
 
-## 6. Failures found and improvements made
+## 7. Failures found and improvements made
 
-{IMPROVEMENTS}
-"""
+{HISTORICAL_IMPROVEMENTS}"""
 
 
-def usage_report(manifest: dict) -> str:
-    final_output_path(manifest)
-    rows = load_rows(REPO_ROOT / manifest["usage_ledger"])
+def usage_report(final: dict) -> str:
+    manifest, rows = final["manifest"], final["usage_rows"]
     summary = summarize(rows)
     requests = manifest["rows"]
     tasks = defaultdict(Counter)
     for row in rows:
         if not row["cached"]:
             tasks[(row["provider"], row["model"])][row["task"]] += 1
+
+    def cost_cells(cost):
+        return ["n/a" if cost is None else f"${cost:.6f}", "n/a" if cost is None else f"${cost / requests:.8f}"]
+
     lines = []
     for (provider, model), totals in summary["per_model"].items():
         tokens = totals["input_tokens"] + totals["output_tokens"]
-        cost = totals["cost_usd"]
         lines.append([provider, model, ", ".join(f"{t} {n}" for t, n in sorted(tasks[(provider, model)].items())),
                       totals["calls"], totals["attempts"], totals["cached_calls"], totals["input_tokens"],
-                      totals["output_tokens"], tokens, f"{tokens / requests:.1f}",
-                      "n/a" if cost is None else f"${cost:.6f}", "n/a" if cost is None else f"${cost / requests:.8f}"])
+                      totals["output_tokens"], tokens, f"{tokens / requests:.1f}", *cost_cells(totals["cost_usd"])])
     overall = summary["overall"]
     overall_tokens = overall["input_tokens"] + overall["output_tokens"]
-    cost = overall["cost_usd"]
     lines.append(["**overall**", "", "", overall["calls"], overall["attempts"], overall["cached_calls"],
                   overall["input_tokens"], overall["output_tokens"], overall_tokens, f"{overall_tokens / requests:.1f}",
-                  "n/a" if cost is None else f"${cost:.6f}", "n/a" if cost is None else f"${cost / requests:.8f}"])
-    pricing = (CODE_DIR / "config" / "pricing.yaml").read_text(encoding="utf-8")
+                  *cost_cells(overall["cost_usd"])])
+    command = " ".join(["python code/main.py", "--cases", manifest["args"]["cases"],
+                        *(["--no-cache"] if manifest["args"]["no_cache"] else [])])
     return f"""# Usage report — final full-dataset run
 
-Run `{manifest['run_id']}` (code revision `{manifest['git_revision']}`), the cold-cache run that produced the submitted
-`output.csv` (sha256 `{manifest['output_sha256']}`): `{' '.join(['python code/main.py', '--cases', manifest['args']['cases'], '--no-cache' if manifest['args']['no_cache'] else ''])}`
-over {requests} requests. Source: usage ledger `{manifest['usage_ledger']}` (one row per
-structured call). `--no-cache` skips cache reads, so every call below was a real model call.
+Run `{manifest['run_id']}` (code revision `{manifest['git_revision']}`), the run that produced the selected `output.csv`
+(sha256 `{manifest['output_sha256']}`): `{command}` over {requests} requests. Source: usage ledger
+`{manifest['usage_ledger']}` (one row per structured call; calls and tokens are reported exactly as recorded).
+{'`--no-cache` skips cache reads, so every call below was a real model call.' if manifest['args']['no_cache'] else ''}
 
 {table(lines, ["Provider", "Model", "Calls by task", "Calls", "Attempts (incl. repair)", "Cached", "Input tokens",
                "Output tokens", "Total tokens", "Avg tokens / request", "Est. cost", "Est. cost / request"])}
 
-- Averages divide by all {requests} requests (most requests make exactly one Jev intent call; PNG extraction is 11 calls
-  shared by the whole run; Azure is called only when the intent decision table needs adjudication).
-- **Costs are estimates.** No official price page for these model ids was found; the prices below come from third-party
-  trackers (recorded with their sources in `code/config/pricing.yaml`). Gemini output tokens include reasoning tokens.
+- Averages divide by all {requests} requests (most requests make one Jev intent call; PNG extraction is 11 calls shared by
+  the whole run; Azure is called only when the intent decision table needs adjudication).
+- **Costs are estimated and unverified.** No official price page for these model ids was found; the prices come from
+  third-party trackers (sources in `code/config/pricing.yaml`). Gemini output tokens include reasoning tokens.
 
 ```yaml
-{pricing.strip()}
+{PRICING_PATH.read_text(encoding="utf-8").strip()}
 ```
 """
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--final-manifest", type=Path, default=None)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--final-manifest", type=Path, default=EVALUATION_DIR / "final_run" / "manifest.json")
+    parser.add_argument("--evaluation-inputs", type=Path, default=None,
+                        help="default: the path named by the final manifest's evaluation_inputs field")
+    parser.add_argument("--report-output-directory", type=Path, default=EVALUATION_DIR,
+                        help="stage reports elsewhere without replacing the selected ones")
+    parser.add_argument("--allow-revision-mismatch", action="store_true",
+                        help="render a report labelled NOT a unified release when the input revisions differ")
+    parser.add_argument("--repository-root", type=Path, default=REPO_ROOT,
+                        help="root holding output.csv, dataset/sample_output.csv and the manifest's relative paths")
     args = parser.parse_args(argv)
-    manifest_path = args.final_manifest or EVALUATION_DIR / "final_run" / "manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    (EVALUATION_DIR / "evaluation_report.md").write_text(evaluation_report(manifest), encoding="utf-8")
-    (EVALUATION_DIR / "usage_report.md").write_text(usage_report(manifest), encoding="utf-8")
-    print(f"wrote evaluation_report.md and usage_report.md from {manifest_path.name}")
+    final = load_final_run(args.final_manifest, args.repository_root)
+    inputs_path = args.evaluation_inputs
+    if inputs_path is None:
+        if "evaluation_inputs" not in final["manifest"]:
+            fail("the final manifest names no evaluation_inputs; pass --evaluation-inputs PATH")
+        inputs_path = args.repository_root / final["manifest"]["evaluation_inputs"]
+    gold = score.read_rows(args.repository_root / "dataset" / "sample_output.csv")
+    inputs = load_evaluation_inputs(inputs_path, gold)
+    unified = inputs["code_revision"] == final["manifest"]["git_revision"]
+    if not unified and not args.allow_revision_mismatch:
+        fail(f"evaluation inputs revision {inputs['code_revision']} != final run revision "
+             f"{final['manifest']['git_revision']}; pass --allow-revision-mismatch to stage a report labelled "
+             "NOT a unified release")
+    args.report_output_directory.mkdir(parents=True, exist_ok=True)
+    (args.report_output_directory / "evaluation_report.md").write_text(evaluation_report(final, inputs, gold, unified),
+                                                                       encoding="utf-8")
+    (args.report_output_directory / "usage_report.md").write_text(usage_report(final), encoding="utf-8")
+    print(f"wrote evaluation_report.md and usage_report.md to {args.report_output_directory}")
 
 
 if __name__ == "__main__":

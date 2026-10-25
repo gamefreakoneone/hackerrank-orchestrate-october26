@@ -1,4 +1,5 @@
-"""Custom and metamorphic validation cases (not a holdout): python code/evaluation/run_custom.py [--offline] [NAME ...]
+"""Custom validation cases (not a holdout): python code/evaluation/run_custom.py [--offline] [NAME ...]
+Writes runs/custom/results.md and the structured runs/custom/results.json.
 
 Each code/evaluation/cases/<name>/ holds request.csv, overlay/ (files appended to or added beside a temporary copy
 of dataset/), expected.csv and expected_flags.json. dataset/ itself is never modified.
@@ -85,6 +86,8 @@ def main(argv: list[str] | None = None) -> int:
     print(report)
     (REPO_ROOT / "runs" / "custom").mkdir(parents=True, exist_ok=True)
     (REPO_ROOT / "runs" / "custom" / "results.md").write_text(report + "\n", encoding="utf-8")
+    (REPO_ROOT / "runs" / "custom" / "results.json").write_text(
+        json.dumps({"offline": args.offline, "results": results}, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return 0 if passed == len(results) else 1
 
 
