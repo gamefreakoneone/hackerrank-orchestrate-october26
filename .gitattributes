@@ -1,0 +1,5 @@
+# Byte-hashed release artifacts (spec 0021): stored and checked out exactly as written, never CRLF-converted,
+# so their recorded SHA-256 values hold on every platform's checkout.
+output.csv -text
+code/evaluation/final_run/** -text
+code/evaluation/corrective_run/** -text

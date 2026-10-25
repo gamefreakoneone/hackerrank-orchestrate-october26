@@ -81,6 +81,31 @@ python code/evaluation/make_reports.py --evaluation-inputs code/evaluation/corre
 ```
 
 Without `--evaluation-inputs`, `make_reports.py` uses the path named by the final manifest's `evaluation_inputs` field.
+
+## Release procedure (spec 0021)
+
+`main.py` writes predictions and diagnostics to run-owned `.<name>.<run_id>.staged` files, validates them, and only then
+replaces `--out` and its diagnostics; a failed validation exits 1, leaves the previous files untouched and keeps the
+rejected candidate. A `--case` subset cannot target the selected `output.csv`. `--run-manifest-output PATH` names the
+run manifest (revision, uncommitted producing code, SHA-256 of output/diagnostics/usage ledger, validation counts).
+
+```bash
+git commit ...                                               # 1. freeze the producing code (clean tree required)
+python code/evaluation/capture_inputs.py                     # 2. evaluation inputs at that revision
+python code/main.py --cases all --no-cache --out runs/corrective/final_candidate.csv \
+    --run-manifest-output runs/corrective/final_candidate.manifest.json      # 3. cold full candidate
+python code/tools/finalize_run.py --candidate-manifest runs/corrective/final_candidate.manifest.json \
+    --evaluation-inputs code/evaluation/corrective_run/evaluation_inputs.json  # 4. validate + publish the bundle
+python code/evaluation/make_reports.py                       # 5. offline rebuild must reproduce the published reports
+git add output.csv code/evaluation && python code/tools/make_zip.py   # 6. package the validated tree
+```
+
+`finalize_run.py` refuses subset, ablation/offline, uncommitted-code, altered, incomplete or invalid candidates and
+evaluation inputs from another revision; it stages everything first, then replaces `code/evaluation/final_run/`, the
+two reports and `output.csv` (last) and re-checks them. The replacement is a sequence of renames, not atomic: an
+interruption reports the run id and the previous bundle's location (the last commit remains the recovery point).
+`.gitattributes` stores the hashed artifacts (`output.csv`, `final_run/`, `corrective_run/`) byte-exact (`-text`),
+so their SHA-256 values also hold on CRLF checkouts.
 `--allow-revision-mismatch` is needed only when the evaluation inputs and the selected final run come from different
 code revisions; the report is then labelled "NOT a unified release".
 

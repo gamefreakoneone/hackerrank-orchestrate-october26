@@ -8,3 +8,6 @@ code/.cache/
 runs/
 code.zip
 agent-trace.zip
+# run-owned staging files left by a failed validation or interrupted finalization (spec 0021)
+*.staged
+.finalize_*/

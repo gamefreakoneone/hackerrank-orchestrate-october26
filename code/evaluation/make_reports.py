@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
@@ -26,6 +25,7 @@ sys.path.insert(0, str(EVALUATION_DIR))
 import score  # noqa: E402
 from capture_inputs import SAMPLE_CONFIGURATIONS  # noqa: E402
 from ghostaudit.llm.ledger import load_rows, summarize  # noqa: E402
+from ghostaudit.provenance import sha256_of  # noqa: E402
 
 PRICING_PATH = CODE_DIR / "config" / "pricing.yaml"
 DISCOVERY_RECALL_TARGET = 0.85     # spec 0010 acceptance target for sample resource recall
@@ -55,10 +55,6 @@ given the gold resource ids and operations, so it measures a component, not end-
 
 def fail(message: str) -> None:
     raise SystemExit(f"make_reports: {message}")
-
-
-def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def table(rows: list[list], header: list[str]) -> str:

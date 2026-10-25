@@ -9,7 +9,6 @@ code revision, copies their outputs into the bundle and writes evaluation_inputs
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import shutil
@@ -21,6 +20,10 @@ from pathlib import Path
 EVALUATION_DIR = Path(__file__).resolve().parent
 CODE_DIR = EVALUATION_DIR.parent
 REPO_ROOT = CODE_DIR.parent
+sys.path.insert(0, str(CODE_DIR))
+
+from ghostaudit.provenance import git_revision, sha256_of, uncommitted_producing_code  # noqa: E402
+
 DEFAULT_BUNDLE_DIRECTORY = EVALUATION_DIR / "corrective_run"
 EVALUATION_INPUTS_FILE = "evaluation_inputs.json"
 # name -> main.py flags; "default" is the submitted configuration, the others are evaluation-only ablations
@@ -31,36 +34,29 @@ SAMPLE_CONFIGURATIONS: dict[str, list[str]] = {
     "trust-claims": ["--ablate", "trust-claims"],
     "ranked-accounts": ["--ungrounded-account-steps", "ranked"],
 }
-TEST_COMMANDS = {"full_suite": ["code/tests"], "metamorphic": ["code/tests/test_metamorphic.py"]}
+# test_packaging_integrity.py checks the finalized release bundle, which is built from these inputs afterwards
+TEST_COMMANDS = {"full_suite": ["code/tests", "--ignore=code/tests/test_packaging_integrity.py"],
+                 "metamorphic": ["code/tests/test_metamorphic.py"]}
 PROVIDER_ENVIRONMENT_VARIABLES = ("TYPESAFE_API_KEY", "AZURE_OPENAI_API_KEY", "GEMINI_API_KEY")
 
 
-def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def git(*arguments: str) -> str:
-    return subprocess.run(["git", *arguments], cwd=REPO_ROOT, capture_output=True, text=True, check=True).stdout
-
-
-def require_committed_code(bundle_directory: Path) -> str:
-    """The recorded revision must be the code that ran: no uncommitted change under code/ outside the bundle."""
-    bundle_relative = bundle_directory.resolve().relative_to(REPO_ROOT).as_posix()
-    dirty = [line for line in git("status", "--porcelain", "--", "code").splitlines()
-             if bundle_relative not in line]
+def require_committed_code() -> str:
+    """The recorded revision must be the code that ran: no uncommitted change to the producing code."""
+    dirty = uncommitted_producing_code()
     if dirty:
-        raise SystemExit("capture needs committed code; uncommitted changes under code/:\n" + "\n".join(dirty))
-    return git("rev-parse", "HEAD").strip()
+        raise SystemExit("capture needs committed producing code; uncommitted changes:\n" + "\n".join(dirty))
+    return git_revision()
 
 
 def run_sample_configuration(name: str, flags: list[str], bundle_directory: Path) -> dict:
     predictions = bundle_directory / f"sample_{name}.csv"
-    command = [sys.executable, str(CODE_DIR / "main.py"), "--cases", "sample", "--out", str(predictions), *flags]
+    run_manifest = REPO_ROOT / "runs" / "capture" / f"sample_{name}.manifest.json"
+    command = [sys.executable, str(CODE_DIR / "main.py"), "--cases", "sample", "--out", str(predictions),
+               "--run-manifest-output", str(run_manifest), *flags]
     completed = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True)
     if completed.returncode != 0:
         raise SystemExit(f"sample configuration {name!r} failed ({completed.returncode}):\n{completed.stdout[-2000:]}"
                          f"\n{completed.stderr[-2000:]}")
-    run_manifest = max((REPO_ROOT / "runs").glob(f"{predictions.stem}_*.manifest.json"), key=lambda p: p.name)
     diagnostics = predictions.with_suffix(".diagnostics.jsonl")
     return {"pipeline_args": flags, "predictions": predictions.name, "predictions_sha256": sha256_of(predictions),
             "diagnostics": diagnostics.name, "diagnostics_sha256": sha256_of(diagnostics),
@@ -88,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bundle-directory", type=Path, default=DEFAULT_BUNDLE_DIRECTORY)
     args = parser.parse_args(argv)
     bundle_directory = args.bundle_directory.resolve()
-    code_revision = require_committed_code(bundle_directory)
+    code_revision = require_committed_code()
     if bundle_directory.exists():
         shutil.rmtree(bundle_directory)
     bundle_directory.mkdir(parents=True)

@@ -5,6 +5,7 @@ reports; fails if any file contains a key-like string or the value of a provider
 """
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import subprocess
@@ -44,14 +45,17 @@ def secret_findings(name: str, data: bytes) -> list[str]:
     return findings
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=OUTPUT, help="archive path (default <repo>/code.zip)")
+    output = parser.parse_args(argv).output
     files = tracked_code_files()
     missing = [r for r in REQUIRED if Path(r) not in files]
     if missing:
         print(f"missing required files: {missing}")
         return 1
     findings = []
-    with zipfile.ZipFile(OUTPUT, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for relative in files:
             data = (REPO_ROOT / "code" / relative).read_bytes()
             findings += secret_findings(str(relative), data)
@@ -59,10 +63,10 @@ def main() -> int:
             info.compress_type = zipfile.ZIP_DEFLATED
             archive.writestr(info, data)
     if findings:
-        OUTPUT.unlink()
+        output.unlink()
         print("secret scan failed:\n" + "\n".join(findings))
         return 1
-    print(f"wrote {OUTPUT.name}: {len(files)} files, {OUTPUT.stat().st_size} bytes; secret scan clean")
+    print(f"wrote {output}: {len(files)} files, {output.stat().st_size} bytes; secret scan clean")
     return 0
 
 
