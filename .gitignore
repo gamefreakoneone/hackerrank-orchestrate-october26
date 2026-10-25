@@ -1,1 +1,9 @@
 .env
+**/.env
+__pycache__/
+*.pyc
+.pytest_cache/
+code/.cache/
+.cache/
+runs/
+code.zip
