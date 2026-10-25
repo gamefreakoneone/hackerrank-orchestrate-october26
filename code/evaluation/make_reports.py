@@ -1,6 +1,6 @@
 """Render evaluation/evaluation_report.md and evaluation/usage_report.md from runs/ artifacts.
 
-python code/evaluation/make_reports.py [--final-manifest runs/<run_id>.manifest.json]
+python code/evaluation/make_reports.py [--final-manifest code/evaluation/final_run/manifest.json]
 """
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ IMPROVEMENTS = """| Spec / commit | Failure found | Change | Measured effect |
 | 0010 `f63f611` | a later primary-only inventory overrode a replica that still held the account (case_05 replica drift) | omission must cover the replica where the record was last seen | case_05 PRESENT with evidence_54, as gold |
 | 0012 `14df3a9` | generic snapshots claimed coverage of collections absent from the whole file (tombstone_17 "absent") | coverage only for collections present in that snapshot | no score change; removes an unsupported absence proof |
 | 0013 `0623153` | negated requests ("not asking for deletion") contain deletion words | keyword check is a cross-check only; disagreements adjudicated by Azure | 10/10 non-deletion requests and 32/32 sample deletions classified correctly |
-| 0010–0012 (kept) | 20/32 samples (351/518) have no grounded subject→account link | **not changed**: ranked guesses stay in diagnostics (contract) | status capped at the conditional bound 23/32; see the ranked-account ablation |
+| 0010–0012 (kept) | 20/32 samples (342/508 deletion requests in the final run) have no grounded subject→account link | **not changed**: ranked guesses stay in diagnostics (contract) | status capped at the conditional bound 23/32; see the ranked-account ablation |
 """
 
 
@@ -82,9 +82,18 @@ def output_distribution(path: Path) -> Counter:
         return Counter(r["deletion_status"] for r in csv.DictReader(handle))
 
 
+def final_output_path(manifest: dict) -> Path:
+    """The promoted root output.csv; fail fast if it is not byte-identical to the selected run."""
+    import hashlib
+    path = REPO_ROOT / "output.csv"
+    if hashlib.sha256(path.read_bytes()).hexdigest() != manifest["output_sha256"]:
+        raise SystemExit("output.csv does not match the selected final run (sha256 differs)")
+    return path
+
+
 def evaluation_report(manifest: dict) -> str:
-    final_output = Path(manifest["args"]["out"])
-    final_diagnostics = score.read_diagnostics(Path(manifest["diagnostics"]))
+    final_output = final_output_path(manifest)
+    final_diagnostics = score.read_diagnostics(REPO_ROOT / manifest["diagnostics"])
     flags = Counter(f for d in final_diagnostics.values() for f in d.get("flags", []))
     links = Counter(d["account_link"]["via"] for d in final_diagnostics.values() if "account_link" in d)
     splits = {split: score_file("sample", split) for split in ("dev", "holdout", "all")}
@@ -94,6 +103,7 @@ def evaluation_report(manifest: dict) -> str:
         else "_custom results not found: run `python code/evaluation/run_custom.py`_"
     metamorphic = subprocess.run([sys.executable, "-m", "pytest", str(CODE_DIR / "tests" / "test_metamorphic.py"), "-q"],
                                  capture_output=True, text=True, cwd=REPO_ROOT).stdout.strip().splitlines()[-1]
+    metamorphic = metamorphic.split(" in ")[0]
     all_split = splits["all"]
     per_field = all_split["field_accuracy"]
     ablation_rows = []
@@ -105,7 +115,7 @@ def evaluation_report(manifest: dict) -> str:
                 row[2] = f"{row[2]} grounded; {guessed_link_accuracy(name)}"
             ablation_rows.append(row)
     full_ablations = []
-    for label, name in [("default", Path(manifest["args"]["out"]).stem)] + \
+    for label, name in [("default", "output")] + \
             [(l, f"all_{n.removeprefix('ablation_')}") for l, n in ABLATIONS[1:]]:
         path = final_output if label == "default" else RUNS / f"{name}.csv"
         if path.is_file():
@@ -181,7 +191,8 @@ Full-dataset status distribution per configuration (518 requests, no answers ava
 
 
 def usage_report(manifest: dict) -> str:
-    rows = load_rows(Path(manifest["usage_ledger"]))
+    final_output_path(manifest)
+    rows = load_rows(REPO_ROOT / manifest["usage_ledger"])
     summary = summarize(rows)
     requests = manifest["rows"]
     tasks = defaultdict(Counter)
@@ -207,7 +218,7 @@ def usage_report(manifest: dict) -> str:
 
 Run `{manifest['run_id']}` (code revision `{manifest['git_revision']}`), the cold-cache run that produced the submitted
 `output.csv` (sha256 `{manifest['output_sha256']}`): `{' '.join(['python code/main.py', '--cases', manifest['args']['cases'], '--no-cache' if manifest['args']['no_cache'] else ''])}`
-over {requests} requests. Source: usage ledger `{Path(manifest['usage_ledger']).relative_to(REPO_ROOT)}` (one row per
+over {requests} requests. Source: usage ledger `{manifest['usage_ledger']}` (one row per
 structured call). `--no-cache` skips cache reads, so every call below was a real model call.
 
 {table(lines, ["Provider", "Model", "Calls by task", "Calls", "Attempts (incl. repair)", "Cached", "Input tokens",
@@ -228,7 +239,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--final-manifest", type=Path, default=None)
     args = parser.parse_args(argv)
-    manifest_path = args.final_manifest or max(RUNS.glob("output_candidate_*.manifest.json"))
+    manifest_path = args.final_manifest or EVALUATION_DIR / "final_run" / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     (EVALUATION_DIR / "evaluation_report.md").write_text(evaluation_report(manifest), encoding="utf-8")
     (EVALUATION_DIR / "usage_report.md").write_text(usage_report(manifest), encoding="utf-8")

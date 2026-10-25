@@ -25,8 +25,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0011 | Completed | `ef07015` | 77/77 discovered gold obligations correct |
 | 0012 | Completed | `14df3a9` | dev status 0.750, F1 0.904 |
 | 0013 | Completed | `0623153` | 508 deletion / 10 non-deletion; 32/32 samples deletion |
-| 0014 | Completed | `d33daa7` (expected outputs, before running) + pending `spec 0014: custom cases, overlay runner and metamorphic tests` | 9/9 custom requests pass; 4 metamorphic tests |
-| 0015–0016 | Not started | — | |
+| 0014 | Completed | `d33daa7` (expected outputs, before running) + `06ce215` | 9/9 custom requests pass; 4 metamorphic tests |
+| 0015 | Completed | `375604e` (code freeze) + pending `spec 0015: cold-cache final run, ablations and reports` | final run 535 calls, est. $0.23 |
+| 0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -37,13 +38,15 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0010 discovery report, all 32 (pipeline not wired) | n/a | 12/32 grounded, precision 12/12, ungrounded 20 | n/a | n/a |
 | 0012 pipeline, dev 20 | 0.750 (15/20) | 7/20 correct, 0 wrong, 13 ungrounded | 0.904 | 0.250 |
 | 0012 pipeline, all 32 | 0.719 (23/32) = conditional bound | 12/32, 0 wrong | 0.898 | 0.281 |
+| 0015 final code, all 32 | 0.719 (23/32) | 12/32, 0 wrong | 0.898 | 0.281 (9/32) |
 
 ## Output stage
 
-**format-only baseline** at root — root `output.csv` holds 518 `NOT_APPLICABLE,[]` rows from the spec 0001 stub (untracked,
-not committed). No audited output has been promoted. A development full pass of the audited pipeline with the intent gate exists at
-`runs/all.csv` (validator clean; 461 INCOMPLETE / 47 COMPLETE / 10 NOT_APPLICABLE) — a development run, not the
-cold-cache final run required by spec 0015.
+**audited pipeline checkpoint** — root `output.csv` is the cold-cache final run `output_candidate_20261025T085130Z`
+(code `375604e`, sha256 `09c8ecf6781e295799866b3e875c21f456de240f8d0b31f4b960a8f59ac786e3`), validator 0 errors / 104
+blocker warnings; INCOMPLETE 461, COMPLETE 47, NOT_APPLICABLE 10. Matching diagnostics, usage ledger and manifest:
+`code/evaluation/final_run/`. Usage: 535 calls, 273,276 in / 88,704 out tokens, est. $0.2266 ($0.00044/request).
+Not yet "submission artifacts validated together" (code.zip is spec 0016). File validity is not hidden-answer accuracy.
 
 ## Providers
 
@@ -70,10 +73,10 @@ cold-cache final run required by spec 0015.
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0015 (cold-cache final run, ablations, reports).
-- Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
+- Continue with spec 0016 (packaging, interview notes).
+- Prices are third-party estimates (no official page found); labelled as such in the usage report.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `d33daa7` (spec 0014 expected outputs).
+Last published checkpoint: `375604e` (spec 0015 code freeze).

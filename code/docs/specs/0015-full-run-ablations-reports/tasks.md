@@ -1,11 +1,11 @@
 # Spec 0015 — full-run-ablations-reports: tasks
 
-- [ ] ablation flags
-- [ ] cold full run
-- [ ] make_reports.py
-- [ ] evaluation_report.md
-- [ ] usage_report.md
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0015: <summary>`
+- [x] ablation flags
+- [x] cold full run
+- [x] make_reports.py
+- [x] evaluation_report.md
+- [x] usage_report.md
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0015: <summary>`
 
 ## Validation commands
 

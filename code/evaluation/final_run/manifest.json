@@ -1,0 +1,37 @@
+{
+ "args": {
+  "ablate": [],
+  "case": null,
+  "cases": "all",
+  "data_root": "dataset",
+  "no_cache": true,
+  "offline": false,
+  "out": "runs/final/output_candidate.csv",
+  "ungrounded_account_steps": "none"
+ },
+ "diagnostics": "code/evaluation/final_run/diagnostics.jsonl",
+ "git_revision": "375604e2c3387748ee0c942e0c28e46433bcec9a",
+ "original_paths": {
+  "diagnostics": "runs/final/output_candidate.diagnostics.jsonl",
+  "manifest": "runs/output_candidate_20261025T085130Z.manifest.json",
+  "output": "runs/final/output_candidate.csv",
+  "usage_ledger": "runs/usage_output_candidate_20261025T085130Z.jsonl"
+ },
+ "output_sha256": "09c8ecf6781e295799866b3e875c21f456de240f8d0b31f4b960a8f59ac786e3",
+ "preserved_copies": {
+  "diagnostics": "code/evaluation/final_run/diagnostics.jsonl",
+  "usage_ledger": "code/evaluation/final_run/usage_ledger.jsonl"
+ },
+ "promoted_to": "output.csv (repository root), byte-identical (sha256 verified)",
+ "rows": 518,
+ "run_id": "output_candidate_20261025T085130Z",
+ "usage_ledger": "code/evaluation/final_run/usage_ledger.jsonl",
+ "usage_overall": {
+  "attempts": 535,
+  "cached_calls": 0,
+  "calls": 535,
+  "cost_usd": 0.22664782800000002,
+  "input_tokens": 273276,
+  "output_tokens": 88704
+ }
+}
