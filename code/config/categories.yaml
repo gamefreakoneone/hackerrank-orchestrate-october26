@@ -57,19 +57,6 @@ inventory_table_system:
   backup_restore_entries: backup_service
   security_audit_records: security_service
 
-# generic customer_data_* stores: collections known per origin system (coverage is emitted even with 0 rows)
-generic_store_collections:
-  account_service: [customer_profiles]
-  analytics_platform: [customer_analytics_reports]
-  backup_service: [backup_catalog]
-  export_service: [customer_export_jobs]
-  identity_service: [deleted_customer_references]
-  integration_service: [connector_configurations]
-  legal_service: [retained_order_records]
-  search_service: [customer_search_documents]
-  security_service: [security_audit_events]
-  support_platform: [support_conversations, ticket_attachments]
-
 # log event name -> category
 log_event_category:
   profile_lookup_started: USER_PROFILE

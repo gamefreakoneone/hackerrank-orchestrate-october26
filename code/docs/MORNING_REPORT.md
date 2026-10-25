@@ -22,8 +22,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0008 | Completed | `c188935` | live: jev, azure, gemini OK |
 | 0009 | Completed | `04c26e4` | 23 PNG records; 8 unreachable resources not in PNGs |
 | 0010 | Completed (recall target not met, contract-bound) | `f63f611` | linkage 12/32 (0 wrong); 167/518 grounded |
-| 0011 | Completed | pending `spec 0011: policy conditions and obligations` | 77/77 discovered gold obligations correct |
-| 0012–0016 | Not started | — | |
+| 0011 | Completed | `ef07015` | 77/77 discovered gold obligations correct |
+| 0012 | Completed | pending `spec 0012: planner, pipeline wiring and diagnostics` | dev status 0.750, F1 0.904 |
+| 0013–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -32,11 +33,14 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0001 stub | not measured (scorer arrives in 0005) | not measured | not measured | not measured |
 | 0005 baseline (format-only stub), all 32 | 0.000 | not measured (no diagnostics) | 0.000 | 0.000 |
 | 0010 discovery report, all 32 (pipeline not wired) | n/a | 12/32 grounded, precision 12/12, ungrounded 20 | n/a | n/a |
+| 0012 pipeline, dev 20 | 0.750 (15/20) | 7/20 correct, 0 wrong, 13 ungrounded | 0.904 | 0.250 |
+| 0012 pipeline, all 32 | 0.719 (23/32) = conditional bound | 12/32, 0 wrong | 0.898 | 0.281 |
 
 ## Output stage
 
-**format-only baseline** — root `output.csv` holds 518 `NOT_APPLICABLE,[]` rows from the spec 0001 stub (untracked,
-not committed). No audited output exists.
+**format-only baseline** at root — root `output.csv` holds 518 `NOT_APPLICABLE,[]` rows from the spec 0001 stub (untracked,
+not committed). No audited output has been promoted. A development full pass of the audited pipeline exists at
+`runs/dev_all.csv` (validator clean, intent gate not yet applied) — not a submission candidate.
 
 ## Providers
 
@@ -63,10 +67,10 @@ not committed). No audited output exists.
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0012.
+- Continue with spec 0013 (intent gate).
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `f63f611` (spec 0010).
+Last published checkpoint: `ef07015` (spec 0011).

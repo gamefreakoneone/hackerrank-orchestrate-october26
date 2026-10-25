@@ -10,7 +10,9 @@ from ghostaudit.evidence.index import Ledger, eligible
 from ghostaudit.identity import Subject, identifier_owner_index, resolve
 from ghostaudit.loaders import Dataset
 from ghostaudit.models import Request
+from ghostaudit.models import Status, Step
 from ghostaudit.obligations import PolicyOutcome, build_obligation
+from ghostaudit.planner import plan
 from ghostaudit.policy import category_fallback, condition, required_state
 from ghostaudit.timeline import delete_claim_times, last_delete_before, resource_category, state_at
 
@@ -97,3 +99,29 @@ def assess(request: Request, ctx: Context) -> Assessment:
                                                     required=required, condition=rule_condition, state=state,
                                                     subject=subject))
     return Assessment(request, subject, discovered, link, outcome, categories, sources)
+
+
+def diagnostics_record(assessment: Assessment, status: Status, steps: list[Step]) -> dict:
+    return {
+        "case_id": assessment.request.case_id,
+        "status": status.value,
+        "flags": assessment.flags,
+        "intent": {"label": "DELETION", "source": "not evaluated before spec 0013"},
+        "subject": {"user_id": assessment.subject.user_id,
+                    "historical_request_email": assessment.request.email.strip().lower()
+                    in assessment.subject.historical_emails},
+        "account_link": assessment.account_link.as_dict(),
+        "discovered": {rid: sorted(d.vias) for rid, d in sorted(assessment.discovered.items())},
+        "categories": {rid: [c, assessment.category_sources.get(rid)] for rid, c in sorted(assessment.categories.items())},
+        "obligations": [o.model_dump(mode="json") for o in assessment.policy.obligations],
+        "excluded": assessment.policy.excluded,
+        "policy_undefined": assessment.policy.policy_undefined,
+        "condition_defaulted": assessment.policy.condition_defaulted,
+        "step_count": len(steps),
+    }
+
+
+def run_case(request: Request, ctx: Context) -> tuple[Status, list[Step], dict]:
+    assessment = assess(request, ctx)
+    status, steps = plan(assessment.policy.obligations, assessment.flags)
+    return status, steps, diagnostics_record(assessment, status, steps)

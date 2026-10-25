@@ -39,6 +39,8 @@ def parse_sql(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obse
         if "snapshot_scope" in tables else None
     observations: list[Observation] = []
     coverage: list[SnapshotCoverage] = []
+    file_collections: set[tuple[str, str]] = set()
+    generic_tables: list[tuple[str, dict[tuple[str, str], set[str]]]] = []
     for table in tables:
         if table == "snapshot_scope":
             continue
@@ -57,14 +59,8 @@ def parse_sql(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obse
                     evidence_id=file_id, captured_at=captured_at, source_kind="sql",
                     container=row["collection_name"], physical_copy=physical_copy, resource_id=row["resource_id"],
                     fields=fields, observed_at=optional_ts(row.get("updated_at")), system_id=row["origin_system"]))
-            known = {(origin, collection) for origin, collections in config()["generic_store_collections"].items()
-                     for collection in collections}
-            for origin, collection in sorted(known | set(ids_by_collection)):
-                ids = ids_by_collection.get((origin, collection), set())
-                coverage.append(SnapshotCoverage(
-                    file_id=file_id, captured_at=captured_at, snapshot_at=snapshot_at, system_id=origin,
-                    collection=collection, physical_copy=physical_copy, scope="full_table", row_count=len(ids),
-                    resource_ids=frozenset(ids)))
+            file_collections.update(ids_by_collection)
+            generic_tables.append((physical_copy, ids_by_collection))
             continue
         container, physical_copy = split_table(table)
         for row in rows:
@@ -87,4 +83,13 @@ def parse_sql(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obse
             file_id=file_id, captured_at=captured_at, snapshot_at=snapshot_at, system_id=system_id,
             collection=container, physical_copy=physical_copy, scope=scope_label, row_count=len(rows),
             resource_ids=frozenset(row["resource_id"] for row in rows)))
+    # generic stores: a table covers every collection that some table of the same snapshot holds (a replica
+    # missing rows its primary has is drift evidence); collections absent from the whole file are not covered
+    for physical_copy, ids_by_collection in generic_tables:
+        for origin, collection in sorted(file_collections):
+            ids = ids_by_collection.get((origin, collection), set())
+            coverage.append(SnapshotCoverage(
+                file_id=file_id, captured_at=captured_at, snapshot_at=snapshot_at, system_id=origin,
+                collection=collection, physical_copy=physical_copy, scope="full_table", row_count=len(ids),
+                resource_ids=frozenset(ids)))
     return observations, coverage
