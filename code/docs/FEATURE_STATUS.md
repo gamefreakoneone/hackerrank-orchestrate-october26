@@ -9,7 +9,7 @@ spec whose dependencies are not `Completed`.
 | 0002 | [dataset-recon](specs/0002-dataset-recon/) | Completed | none | Understand the dataset and the gold format before designing; answer the HANDOFF §3 open questions. |
 | 0003 | [data-contracts-loaders](specs/0003-data-contracts-loaders/) | Completed | 0001 | Typed, timezone-aware loaders for every CSV and the Key Contract models. |
 | 0004 | [serializer-validator](specs/0004-serializer-validator/) | Completed | 0003 | Deterministic output writer and a hard validator for every output rule. |
-| 0005 | [scorer-and-split](specs/0005-scorer-and-split/) | Not started | 0004 | Grader-replica scorer, frozen dev/holdout split, baseline numbers. |
+| 0005 | [scorer-and-split](specs/0005-scorer-and-split/) | Completed | 0004 | Grader-replica scorer, frozen dev/holdout split, baseline numbers. |
 | 0006 | [identity-resolution](specs/0006-identity-resolution/) | Not started | 0003 | Resolve the subject and every identifier valid at or before audit_at. |
 | 0007 | [evidence-parsers](specs/0007-evidence-parsers/) | Not started | 0003, 0006 | Parse every non-image evidence file once into Observations with an inverted index. |
 | 0008 | [llm-provider-layer](specs/0008-llm-provider-layer/) | Not started | 0001 | Single structured-call layer for Jev, Azure (Strands) and Gemini (Strands) with cache and usage ledger. |

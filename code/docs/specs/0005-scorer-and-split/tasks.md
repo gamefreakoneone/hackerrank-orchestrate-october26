@@ -1,11 +1,11 @@
 # Spec 0005 — scorer-and-split: tasks
 
-- [ ] score.py
-- [ ] split.json
-- [ ] run_eval.py
-- [ ] tests for scorer on toy inputs
-- [ ] baseline snapshot in status.md
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0005: <summary>`
+- [x] score.py
+- [x] split.json
+- [x] run_eval.py
+- [x] tests for scorer on toy inputs
+- [x] baseline snapshot in status.md
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0005: <summary>`
 
 ## Validation commands
 

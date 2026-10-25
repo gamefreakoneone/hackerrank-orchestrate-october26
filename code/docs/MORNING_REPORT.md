@@ -15,14 +15,16 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0001 | Completed | `15c97a8` | live smoke: jev OK, azure OK, gemini OK |
 | 0002 | Completed (before this run) | `66e8559` and earlier | recon |
 | 0003 | Completed | `0695b52` | 7 tests |
-| 0004 | Completed | pending `spec 0004: deterministic serializer and hard output validator` | 13 tests; validator clean on sample_output.csv |
-| 0005–0016 | Not started | — | |
+| 0004 | Completed | `84bbd03` | 13 tests; validator clean on sample_output.csv |
+| 0005 | Completed | pending `spec 0005: grader-replica scorer, frozen split, eval runner` | baseline recorded |
+| 0006–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
 | Checkpoint | Status acc | Account linkage | Step F1 | Seq exact |
 |---|---|---|---|---|
 | 0001 stub | not measured (scorer arrives in 0005) | not measured | not measured | not measured |
+| 0005 baseline (format-only stub), all 32 | 0.000 | not measured (no diagnostics) | 0.000 | 0.000 |
 
 ## Output stage
 
@@ -49,9 +51,9 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0005.
+- Continue with spec 0006.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `0695b52` (spec 0003).
+Last published checkpoint: `84bbd03` (spec 0004).
