@@ -1,4 +1,5 @@
-"""SQLite snapshot exports → Observations (one per row) and SnapshotCoverage (one per table/collection)."""
+"""SQLite snapshot exports → Observations (one per row) and SnapshotCoverage (one per table/collection).
+A row's observation time is the snapshot header time; its updated_at is last-update metadata (kept in fields)."""
 from __future__ import annotations
 
 import json
@@ -58,7 +59,7 @@ def parse_sql(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obse
                 observations.append(make_observation(
                     evidence_id=file_id, captured_at=captured_at, source_kind="sql",
                     container=row["collection_name"], physical_copy=physical_copy, resource_id=row["resource_id"],
-                    fields=fields, observed_at=optional_ts(row.get("updated_at")), system_id=row["origin_system"]))
+                    fields=fields, observed_at=snapshot_at, system_id=row["origin_system"]))
             file_collections.update(ids_by_collection)
             generic_tables.append((physical_copy, ids_by_collection))
             continue
@@ -67,7 +68,7 @@ def parse_sql(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obse
             observations.append(make_observation(
                 evidence_id=file_id, captured_at=captured_at, source_kind="sql", container=container,
                 physical_copy=physical_copy, resource_id=row["resource_id"], fields=flatten(row),
-                observed_at=optional_ts(row.get("updated_at") or row.get("indexed_at"))))
+                observed_at=snapshot_at))
         if scope is not None:
             system_id = config()["inventory_table_system"].get(table)
             if system_id not in scope:

@@ -7,6 +7,7 @@ from datetime import datetime
 from ghostaudit.evidence.derive import flatten, is_resource_id, make_observation
 from ghostaudit.evidence.model import Observation, SnapshotCoverage
 from ghostaudit.evidence.sql import optional_ts
+from ghostaudit.identity import USER_ID_RE
 
 CONTEXT_KEYS = ("collection", "data_store", "captured_at", "observed_at", "origin", "source")
 
@@ -35,13 +36,17 @@ def parse_json(file_id: str, captured_at: datetime, text: str) -> tuple[list[Obs
             return
         context = {**context, **{k: node[k] for k in CONTEXT_KEYS if isinstance(node.get(k), str)}}
         if "snapshots" in node:                                   # records-assurance snapshot bundle
+            # a bundle is exported for a batch of subjects: its collections are complete only for those user_ids
+            covered_subjects = frozenset(value for snapshot in node["snapshots"] for record in snapshot["records"]
+                                         for value in record.values()
+                                         if isinstance(value, str) and USER_ID_RE.match(value))
             for snapshot in node["snapshots"]:
                 records = snapshot.get("records", [])
                 coverage.append(SnapshotCoverage(
                     file_id=file_id, captured_at=captured_at, snapshot_at=optional_ts(snapshot.get("captured_at")),
                     system_id=snapshot["data_store"], collection=snapshot["collection"], physical_copy="bundle",
-                    scope="full_table", row_count=len(records),
-                    resource_ids=frozenset(r["resource_id"] for r in records)))
+                    scope="bundle_subjects", row_count=len(records),
+                    resource_ids=frozenset(r["resource_id"] for r in records), covered_subjects=covered_subjects))
                 walk(records, {**context, "data_store": snapshot["data_store"], "collection": snapshot["collection"],
                                "captured_at": snapshot.get("captured_at"), "physical_copy": "bundle"},
                      path + ("snapshots",))

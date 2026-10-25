@@ -4,17 +4,17 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Post-implementation correction pass — planned, not implemented
+## Post-implementation correction pass — in progress
 
 Baseline: `2a722566e1367f409a5b3789ce61c1c19c566cfc`. The implementation review is
 `reviews/0001-implementation-review.md`; execution instructions are in `CORRECTIVE_HANDOFF.md`.
-The following are approved **prospective contract changes**, owned by specs 0017–0021. The runtime at the
-baseline does not yet satisfy them. Update the relevant Key Contracts and mark the change implemented only in
+The following are approved contract changes, owned by specs 0017–0021; a row marked **implemented** is in the
+runtime and the Key Contracts below, the others are still prospective (the baseline runtime does not satisfy them). Update the relevant Key Contracts and mark the change implemented only in
 the owning spec's implementation commit, preserving the original decision history below.
 
 | Owner | Planned correction | Completion evidence |
 |---|---|---|
-| 0017 | Reconstruct state/treatment per identified physical copy, then combine the required copy scopes. Evidence formats are not automatically copy identities. A primary-only absence or clean record cannot clear an uncleared replica. | Cross-copy counterexamples fail on the baseline and pass after correction; same-copy later observations can supersede older state. |
+| 0017 (**implemented**) | Reconstruct state/treatment per identified physical copy, then combine the required copy scopes. Evidence formats are not automatically copy identities. A primary-only absence or clean record cannot clear an uncleared replica. | Cross-copy counterexamples fail on the baseline and pass after correction; same-copy later observations can supersede older state. |
 | 0018 | Required record presence and required identifier/restore treatment are separate predicates. Absence cannot satisfy a policy that requires the record to remain. | Missing tombstone/retained-backup regressions; compliant retained records pass; unsupported restoration actions are never invented. |
 | 0019 | Improve only supported identifier/reference discovery; record unresolved causes and provenance separately from precision/coverage. | Comparable before/after measurements or a justified investigation-only outcome. |
 | 0020 | Derive claims from preserved, revision-labelled evaluation artifacts; distinguish oracle-assisted diagnostics from end-to-end measurements. | Reports rebuild without model calls or an unrecorded `runs/` dependency; missing/mismatched required inputs fail explicitly. |
@@ -50,7 +50,8 @@ per case:
   3 discovery: exact identifier-linked records (≤ audit_at) → fixed-point expansion
               + subject-level account link (§5 Q3): grounded reference links; workflow timing only ranks
                 ungrounded candidates (diagnostics), never grounds them
-  4 state @ audit_at per resource: latest establishing observation or SnapshotCoverage (file captured_at ≤ audit_at);
+  4 state @ audit_at per resource and storage copy (0017): per copy, the latest establishing observation by observation
+    time, or a later snapshot of that copy omitting it (file captured_at ≤ audit_at); never observed ⇒ §5 Q2 omission;
     state-check activity (CHECK_DATA_FLOW / CHECK_RESTORE_ACCESS) only if no file establishes it;
     operational claims (DELETE_RECORD SUCCESS, …) never set state; nothing establishes it ⇒ UNKNOWN
   5 policy → obligations (required end state; rule conditions TRUE/FALSE/UNKNOWN)
@@ -94,10 +95,14 @@ Rows sorted by the integer suffix of `case_id`.
 class Observation(BaseModel, frozen=True):
     evidence_id: str                  # file_id (evidence_NN); activity_id when source_kind == "activity"
     captured_at: datetime             # manifest captured_at; activity event_time for activity — the cutoff key
-    observed_at: datetime | None      # record-level time if present (observed_at, updated_at, log ts)
+    observed_at: datetime | None      # when the state was observed (0017): SQL snapshot header, record observed_at /
+                                      # recorded_at or bundle snapshot time, last log line of the trace; never a
+                                      # row's updated_at. None ⇒ captured_at; ordering uses min(observed_at, captured_at)
     source_kind: Literal["sql", "json", "log", "txt", "pdf", "png", "activity"]  # "activity" = state-check events only
     container: str                    # table / collection / log service / document type
-    physical_copy: str                # e.g. "customer_profiles_failover_replica", "primary"
+    physical_copy: str                # SQL table suffix ("primary", "failover_replica", …) or a format label
+                                      # ("export", "bundle", "service_read", "screen", "document"); format labels have
+                                      # no copy identity and map to the system of record ("primary") — 0017
     system_id: str | None             # logical service (derived, §5 Q1)
     resource_id: str
     category: str | None              # data_category (derived, §5 Q1)
@@ -125,7 +130,13 @@ class SnapshotCoverage(BaseModel, frozen=True):
                                       # snapshot_scope origin_system list for inventory files
     row_count: int                    # 0 is valid and meaningful (evidence_51, evidence_90)
     resource_ids: frozenset[str]
+    covered_subjects: frozenset[str] | None = None   # 0017: a records-assurance bundle is complete only for the
+                                      # user_ids it was exported for; None = full table (SQL snapshots)
 ```
+
+Absence by omission (0017): a copy last observed present is cleared only by a later (snapshot time) coverage row of
+that same storage copy that omits the resource; a bundle row counts only when the subject's user_id is in
+`covered_subjects`. A never-observed resource keeps the §5 Q2 rule.
 
 Emitted for complete SQL tables, generic-store collections (`customer_data_*` × `collection_name`), inventory
 tables under `snapshot_scope`, and bundle `snapshots[]` entries. Never for `service_resource_export` lookups,
@@ -158,7 +169,12 @@ class Obligation(BaseModel, frozen=True):
     proof: str                        # establishing file_id (preferred) or activity_id/audit_id fallback, or ""
     proof_kind: Literal["file", "activity", "audit", ""]
     satisfied: bool                   # False whenever current == "UNKNOWN"
+    copy_states: tuple[CopyState, ...] = ()   # 0017, diagnostics: (physical_copy, current, proof, rule) per copy
 ```
+
+Per-copy aggregation (0017): each storage copy's latest fact gets its own current state; any copy whose state does
+not satisfy `required` makes the obligation unsatisfied and is the cited `proof` (latest violating copy); otherwise
+the latest compliant copy is cited. No established copy ⇒ UNKNOWN. Other copies' proofs stay in `copy_states`.
 
 Templates (from rules + gold):
 
@@ -392,7 +408,8 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 - Sample gold cites only `file_id`s; the contract also allows activity_id/audit_id (kept as a fallback, §Q2).
 - INCOMPLETE gold verifies every obligation (40 VERIFY_RECORD_ABSENT vs 21 DELETE_RECORD; 17
   VERIFY_RECORD_PRESENT for audit records); backups verify as VERIFY_RESTORE_BLOCKED.
-- Physical replicas report under the logical system; present in any copy ⇒ PRESENT.
+- Physical replicas report under the logical system; present in any copy ⇒ PRESENT. Since 0017 each copy's state is
+  reconstructed separately first, so a newer system-of-record read cannot hide an uncleared replica.
 - Samples have 0 NOT_APPLICABLE; CLASSIFY_REQUEST (10 rows, all "non-deletion") is a cross-check.
 - `email_hash` = sha256(raw email), 850/850.
 
@@ -432,3 +449,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | [overnight] Absence by omission must cover the copy where the resource was last seen when that was a replica snapshot; trace records ignore infrastructure lines (`cache_lookup`, `connection_acquired`, `dependency_*`); `*_completed` read events count as presence | spec 0010: case_05 replica drift, case_15 cache miss read as absence, case_03/18 readbacks; state_report 104/111 states, 75/75 proofs |
 | 2026-10-25 | [overnight] Grounded linkage stays 12/32 on samples (167/518 overall): the 20 ungrounded sample accounts and 7 anonymized analytics records have no eligible grounded link; recall target 85% not attainable under grounding | spec 0010 inspection; contract over score |
 | 2026-10-25 | [overnight] No separate `cite.py`: the obligation proof from `timeline.state_at` (observed → omission → state-check activity) is the citation; generic snapshots cover only collections present in the same file | spec 0012: one rule, one implementation; tombstone_17 omission came from a collection the snapshot never held |
+| 2026-10-25 | **0017** State per storage copy, then combined (violation wins, cited from the violating copy); only SQL table names identify copies, format labels mean the system of record; observation time (snapshot / read / record time) orders states within a copy, captured_at only gates eligibility; bundle omissions count only for the subjects the bundle was exported for; superseded `_latest`/`required_copy` path deleted | Review finding 1: primary-only 404 / clean primary hid a replica; `evidence_51` omits a record read 23 s earlier and lists only 2 subjects; full-dataset impact 3 obligations (0 COMPLETE → INCOMPLETE) |

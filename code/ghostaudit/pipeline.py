@@ -102,7 +102,7 @@ def assess(request: Request, ctx: Context) -> Assessment:
         if rule_condition == "UNKNOWN":
             outcome.condition_defaulted.append(resource_id)
         state = state_at(resource_id, system_id, category, audit_at, ledger,
-                         last_delete_before(ctx.deletes, resource_id, audit_at))
+                         last_delete_before(ctx.deletes, resource_id, audit_at), subject.user_id)
         outcome.obligations.append(build_obligation(system_id=system_id, resource_id=resource_id, category=category,
                                                     required=required, condition=rule_condition, state=state,
                                                     subject=subject))

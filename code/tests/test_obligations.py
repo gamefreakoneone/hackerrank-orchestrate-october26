@@ -19,9 +19,10 @@ def obs(identifiers=(), **fields):
 
 
 def state(presence=None, enabled=None, restorable=None):
-    def fact(value, observation=None):
-        return None if value is None else Fact(value, "evidence_7", "file", observation, "observed")
-    return ResourceState("r_1", fact(*presence) if presence else None, fact(enabled), fact(restorable), ())
+    def by_copy(value, observation=None):
+        return {} if value is None else {"primary": Fact(value, "evidence_7", "file", observation, "observed",
+                                                         "primary", T)}
+    return ResourceState("r_1", by_copy(*presence) if presence else {}, by_copy(enabled), by_copy(restorable), ())
 
 
 def oblige(required, resource_state):

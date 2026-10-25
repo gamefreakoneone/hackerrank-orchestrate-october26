@@ -33,3 +33,5 @@ class SnapshotCoverage(Frozen):
     scope: str
     row_count: int
     resource_ids: frozenset[str]
+    covered_subjects: frozenset[str] | None = None   # records-assurance bundle: the user_ids it was exported for;
+                                                     # None = not limited to particular subjects (full table)

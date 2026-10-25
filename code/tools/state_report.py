@@ -18,29 +18,22 @@ from ghostaudit.evidence.index import build_ledger  # noqa: E402
 from ghostaudit.evidence.vision import vision_observations  # noqa: E402
 from ghostaudit.identity import resolve  # noqa: E402
 from ghostaudit.loaders import load_dataset  # noqa: E402
-from ghostaudit.timeline import (delete_claim_times, exposed_direct_identifiers, has_user_link,  # noqa: E402
-                                 last_delete_before, resource_category, state_at)
+from ghostaudit.obligations import SATISFYING, current_state  # noqa: E402
+from ghostaudit.timeline import delete_claim_times, last_delete_before, resource_category, state_at  # noqa: E402
+
+
+VERIFY_REQUIRED = {"VERIFY_DATA_FLOW_DISABLED": "DISABLED", "VERIFY_RESTORE_BLOCKED": "BLOCKED",
+                   "VERIFY_RECORD_REDACTED": "REDACTED", "VERIFY_RECORD_ANONYMIZED": "ANONYMIZED",
+                   "VERIFY_RECORD_PRESENT": "PRESENT", "VERIFY_RECORD_ABSENT": "ABSENT"}
 
 
 def reconstructed(ops: set[str], state, subject) -> tuple[str | None, str | None]:
-    if "VERIFY_DATA_FLOW_DISABLED" in ops:
-        fact = state.enabled
-        return (None, None) if fact is None else ("VIOLATED" if fact.value else "OK", fact.proof)
-    if "VERIFY_RESTORE_BLOCKED" in ops:
-        fact = state.restorable
-        return (None, None) if fact is None else ("VIOLATED" if fact.value else "OK", fact.proof)
-    fact = state.presence
+    """Gold's verification operation names the required state; the engine's per-copy evaluation decides it."""
+    required = next(VERIFY_REQUIRED[op] for op in VERIFY_REQUIRED if op in ops)
+    current, fact, _ = current_state(required, state, subject)
     if fact is None:
         return None, None
-    if ops & {"VERIFY_RECORD_REDACTED", "VERIFY_RECORD_ANONYMIZED"}:
-        if fact.value == "absent":
-            return "OK", fact.proof
-        exposed = exposed_direct_identifiers(fact.observation, subject)
-        linked = "VERIFY_RECORD_ANONYMIZED" in ops and has_user_link(fact.observation, subject)
-        return ("VIOLATED" if exposed or linked else "OK"), fact.proof
-    if "VERIFY_RECORD_PRESENT" in ops:
-        return ("OK" if fact.value == "present" else "VIOLATED"), fact.proof
-    return ("VIOLATED" if fact.value == "present" else "OK"), fact.proof
+    return ("OK" if current in SATISFYING[required] else "VIOLATED"), fact.proof
 
 
 def main() -> None:
@@ -57,7 +50,8 @@ def main() -> None:
         for (system_id, resource_id), steps in sorted(steps_by_resource.items()):
             ops = {s["operation"] for s in steps}
             state = state_at(resource_id, system_id, resource_category(resource_id, request.audit_at, ledger),
-                             request.audit_at, ledger, last_delete_before(deletes, resource_id, request.audit_at))
+                             request.audit_at, ledger, last_delete_before(deletes, resource_id, request.audit_at),
+                             subject.user_id)
             got, proof = reconstructed(ops, state, subject)
             want = "VIOLATED" if any(s["phase"] == "FINDING" for s in steps) else "OK"
             cited = {s["evidence_id"] for s in steps if s["evidence_id"]}

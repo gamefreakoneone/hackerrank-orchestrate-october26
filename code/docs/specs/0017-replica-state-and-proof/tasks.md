@@ -1,12 +1,12 @@
 # Spec 0017 — Replica state and proof: tasks
 
-- [ ] Read the four spec files, handoff, baseline review and affected runtime/tests.
-- [ ] Record comparable before metrics; reproduce the two cross-copy false-COMPLETE cases.
-- [ ] Implement scoped per-copy state and treatment evaluation with proof diagnostics.
-- [ ] Add the planned regression tests; update affected callers/contracts and remove superseded logic.
-- [ ] Run focused checks and record after metrics, including justified differences from sample gold.
-- [ ] Update status/tasks/FEATURE_STATUS, Key Contracts and MORNING_REPORT; append log and verify trace export.
-- [ ] Commit `spec 0017: correct replica state and proof aggregation`, push, and verify remote publication
+- [x] Read the four spec files, handoff, baseline review and affected runtime/tests.
+- [x] Record comparable before metrics; reproduce the two cross-copy false-COMPLETE cases.
+- [x] Implement scoped per-copy state and treatment evaluation with proof diagnostics.
+- [x] Add the planned regression tests; update affected callers/contracts and remove superseded logic.
+- [x] Run focused checks and record after metrics, including justified differences from sample gold.
+- [x] Update status/tasks/FEATURE_STATUS, Key Contracts and MORNING_REPORT; append log and verify trace export.
+- [x] Commit `spec 0017: correct replica state and proof aggregation`, push, and verify remote publication
       before starting 0018. Record the actual branch/SHA; a failed check or push is not saved completion.
 
 ## Validation commands

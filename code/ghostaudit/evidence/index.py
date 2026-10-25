@@ -17,7 +17,7 @@ from ghostaudit.evidence.text import parse_text
 from ghostaudit.loaders import Dataset
 from ghostaudit.models import Activity
 
-PARSER_VERSION = "0012.1"
+PARSER_VERSION = "0017.2"
 CACHE_DIR = Path(__file__).resolve().parents[2] / ".cache" / "evidence"
 STATE_CHECK_EVENT_TYPES = ("CHECK_DATA_FLOW", "CHECK_RESTORE_ACCESS")
 

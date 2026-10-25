@@ -1,6 +1,6 @@
 # Spec 0017 — Replica state and proof: requirements
 
-**Status:** Not started. **Depends on:** 0010, 0012, 0016 (implemented baseline).
+**Status:** Completed. **Depends on:** 0010, 0012, 0016 (implemented baseline).
 Read `../../CORRECTIVE_HANDOFF.md` and implementation-review finding 1 first.
 
 ## Goal

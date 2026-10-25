@@ -151,6 +151,14 @@ CurrentState = Literal["PRESENT", "EXPOSED", "ACTIVE", "ABSENT", "REDACTED", "AN
                        "DISABLED", "BLOCKED", "UNKNOWN"]
 
 
+class CopyState(Frozen):
+    """Diagnostics: the state one storage copy contributes to an obligation, and the evidence establishing it."""
+    physical_copy: str
+    current: CurrentState
+    proof: str
+    rule: str                         # observed | snapshot_omission | state_check_activity
+
+
 class Obligation(Frozen):
     system_id: str
     resource_id: str
@@ -161,6 +169,7 @@ class Obligation(Frozen):
     proof: str
     proof_kind: Literal["file", "activity", "audit", ""]
     satisfied: bool
+    copy_states: tuple[CopyState, ...] = ()   # every contributing copy; `proof` is the cited (violating) one
 
 
 def case_key(case_id: str) -> int:

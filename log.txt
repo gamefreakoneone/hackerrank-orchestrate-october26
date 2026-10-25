@@ -1506,3 +1506,56 @@ parent_agent=none
 ### [2026-10-25T09:45:56.604811Z] Corrective documentation validation
 
 Verified all five four-file specs, Not started statuses, unchecked implementation tasks, explicit validation commands, code fences and 13 review source references against the pinned implementation revision. Confirmed no changes to runtime code, tests, configuration, evaluation artifacts, predictions or dataset relative to 2a72256; the implementation was incorporated by fast-forward only. Re-read the three appended user entries and verified exactly one OpenCode/azure/gpt-6-astra pair in each; the structured trace preserves ten user turns. These are documentation checks, not execution of the future corrective tests.
+
+## [2026-10-25T09:52:21Z] SESSION START
+
+tool=Claude Code
+model=claude-opus-5-5
+Repo Root: /home/user/hackerrank-orchestrate-october26
+Branch: claude/specs-0017-0021-5s3kpe
+Worktree: main
+Parent Agent: none
+Language: py
+Time Remaining: not configured
+
+## [2026-10-25T10:12:33Z] Spec 0017: per-copy replica state and proof
+
+User Prompt (verbatim, secrets redacted):
+Start from the latest origin/claude/eager-cray-7fhtkf.
+Read @AGENTS.md, @CLAUDE.md, @code/docs/TECHNICAL_DESIGN.md,
+@code/docs/FEATURE_STATUS.md, 
+and code/docs/CORRECTIVE_HANDOFF.md.
+Implement specs 0017–0021 in order, following their requirements,
+designs, tasks and acceptance checks.
+
+After each completed spec, update metrics and documentation,
+append the log, export and verify the trace, then commit and PUSH.
+Verify publication before starting the next spec.
+Never mark failed acceptance checks as Completed.
+
+Remember the following principles:
+1. "YAGNI": Don't build it until you need it
+2. "DRY": Extract patterns after second duplication, not before
+3. "FALL FAST": Explicit Errors beat silent failures
+4. "Simple First": Write the obvious solution, optimise only if needed.
+5. "Delete Aggresively": Less code = fewer bugs
+6. "Semantic Naming": Always name variables, parameters, and API endpoints with verbose, self-documenting names that optimise for comprehension by both Humans and LLms, and not brevity. (eg: "wait_until_OBS_IS_save=true" vs "wait=true")
+
+Agent Response Summary:
+Reset the designated branch claude/specs-0017-0021-5s3kpe to origin/claude/eager-cray-7fhtkf (bf79d4a), measured the live-provider sample baseline (23/32 status, step F1 0.896, 9/32 exact) and reproduced the review's cross-copy false-COMPLETE counterexamples (7 of 9 new tests failed). Replaced the global latest-file selector with per-storage-copy state (SQL table names identify copies; format labels mean the system of record; observation time orders states; bundle omissions are scoped to the subjects the bundle was exported for), with the violating copy cited and all copy proofs kept in diagnostics. After: 118 tests pass, sample outputs byte-identical with the same cached responses, oracle state diagnostic 103/111 (one justified UNKNOWN), full-dataset impact 3 obligations and 0 COMPLETE->INCOMPLETE. Spec 0017 marked Completed with docs, contracts and decision log updated.
+
+Actions:
+* git fetch origin claude/eager-cray-7fhtkf; git checkout -B claude/specs-0017-0021-5s3kpe origin/claude/eager-cray-7fhtkf
+* python code/evaluation/run_eval.py --split all --out runs/corrective/0017_before.csv (live) and 0017_after.csv (cached); score.py --split dev for both
+* Edited code/ghostaudit/timeline.py, obligations.py, models.py, pipeline.py, evidence/sql.py, evidence/json_.py, evidence/model.py, evidence/index.py, tools/state_report.py
+* Added code/tests/test_replica_state.py; updated tests/test_timeline.py, tests/test_obligations.py
+* python -m pytest code/tests -q (118 passed, 2 skipped); git diff --check; state_report.py; offline 518-case obligation diff
+* Updated spec 0017 status/tasks/requirements, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md; exported trace via scripts/save_trace.sh
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

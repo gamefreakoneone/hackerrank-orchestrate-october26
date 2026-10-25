@@ -1,10 +1,21 @@
-# MORNING_REPORT — overnight run
+# MORNING_REPORT — overnight run and corrective pass
 
-> **Post-run audit / corrective handoff:** The implementation at `2a72256` has now been fast-forwarded into
-> `claude/eager-cray-7fhtkf`. The report below remains the historical overnight result. The independent review
-> found correctness/reproducibility gaps; approved specs **0017–0021 are Not started**. Read
-> `CORRECTIVE_HANDOFF.md`, `FEATURE_STATUS.md`, and `reviews/0001-implementation-review.md` for the current work.
-> The saved output is unchanged; no corrected release or improved score is claimed by this documentation update.
+## Corrective pass (specs 0017–0021) — current progress
+
+Branch `claude/specs-0017-0021-5s3kpe` (Claude Code cloud session, started from `origin/claude/eager-cray-7fhtkf`
+@ `bf79d4a`). Everything below this section is the **historical overnight report** (code `2a72256`/`375604e`); its
+numbers were not produced by the corrected code. Root `output.csv` and `code/evaluation/final_run/` are unchanged
+until spec 0021 validates and promotes a new candidate.
+
+| Spec | Status | Measured result (32 samples, same cached provider responses before/after) |
+|---|---|---|
+| 0017 replica state and proof | Completed | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (outputs byte-identical); 7/9 new counterexample tests failed on the baseline, all pass; full-dataset state impact 3 obligations, 0 COMPLETE → INCOMPLETE |
+| 0018 required record preservation | Not started | — |
+| 0019 grounded discovery coverage | Not started | — |
+| 0020 reproducible evaluation reports | Not started | — |
+| 0021 validated final run packaging | Not started | — |
+
+## Historical overnight report (not re-measured)
 
 Run: unattended, Claude Code session `ec35ed67-5cb9-5bde-94dc-96a460a90186` (cloud session
 `session_01W4Ze6mbVNu5rNRyb4mLfBz`), model `claude-opus-5-5`, 2026-10-25 07:51Z → ~09:30Z.

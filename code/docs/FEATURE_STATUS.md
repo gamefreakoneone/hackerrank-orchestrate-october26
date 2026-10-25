@@ -21,7 +21,7 @@ spec whose dependencies are not `Completed`.
 | 0014 | [custom-eval-and-metamorphic](specs/0014-custom-eval-and-metamorphic/) | Completed | 0012, 0013 | Team-created evaluation cases and metamorphic tests (problem statement requires ≥3 custom cases). |
 | 0015 | [full-run-ablations-reports](specs/0015-full-run-ablations-reports/) | Completed | 0014 | Final cold-cache full run, ablations, and the two required evaluation reports. |
 | 0016 | [packaging-and-interview](specs/0016-packaging-and-interview/) | Completed | 0015 | Submission artifacts and interview preparation. |
-| 0017 | [replica-state-and-proof](specs/0017-replica-state-and-proof/) | Not started | 0010, 0012, 0016 | Per-copy state and treatment evidence; prevent a primary-only result from clearing another replica. |
+| 0017 | [replica-state-and-proof](specs/0017-replica-state-and-proof/) | Completed | 0010, 0012, 0016 | Per-copy state and treatment evidence; prevent a primary-only result from clearing another replica. |
 | 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Not started | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
 | 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Not started | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
 | 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Not started | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
@@ -31,13 +31,24 @@ spec whose dependencies are not `Completed`.
 
 The overnight implementation is the historical baseline at `2a722566e1367f409a5b3789ce61c1c19c566cfc`,
 originally pushed on `claude/nifty-tesla-4ig5f5` and fast-forwarded into `claude/eager-cray-7fhtkf` for this pass.
-Start with **0017**, following `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`.
+Follow `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`. Work branch (cloud session's designated
+push branch): `claude/specs-0017-0021-5s3kpe`, started from `origin/claude/eager-cray-7fhtkf` @ `bf79d4a`.
+**0017 Completed; next: 0018.**
 
 The original 0001–0016 statuses record the overnight milestones, not a claim that all current correctness or
 acceptance gaps are closed. In particular, 0010 reported Completed with recall **77/111 versus the ≥85% target**;
-that target remains an explicitly unmet historical acceptance criterion. Specs 0017–0021 are not implemented.
+that target remains an explicitly unmet historical acceptance criterion.
 Preserve historical measurements; report new measurements with their own code revision/configuration. Do not
 mark a corrective spec Completed when a mandatory check fails or turn a coverage limitation into a guessed link.
+
+### Corrective publication record
+
+Each spec commit is pushed and verified on the remote before the next spec starts; SHAs are filled in by the next
+commit (a commit cannot contain its own SHA).
+
+| Spec | Commit | Remote branch | Verified |
+|---|---|---|---|
+| 0017 | `spec 0017: correct replica state and proof aggregation` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
 
 ## Planning history
 
