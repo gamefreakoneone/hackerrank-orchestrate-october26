@@ -2,13 +2,17 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import sys
 from pathlib import Path
 
 CODE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = CODE_DIR.parent
 sys.path.insert(0, str(CODE_DIR))
+
+from ghostaudit.loaders import load_dataset  # noqa: E402
+from ghostaudit.models import Status  # noqa: E402
+from ghostaudit.serialize import write_output  # noqa: E402
+from ghostaudit.validate import report, validate_output  # noqa: E402
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -23,20 +27,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    requests_file = "sample_deletion_requests.csv" if args.cases == "sample" else "deletion_requests.csv"
-    with (REPO_ROOT / "dataset" / requests_file).open(encoding="utf-8-sig", newline="") as handle:
-        requests = list(csv.DictReader(handle))
+    dataset = load_dataset(REPO_ROOT / "dataset", sample=args.cases == "sample")
+    requests = [r for r in dataset.requests if not args.case or r.case_id in set(args.case)]
+    rows = [(request.case_id, Status.NOT_APPLICABLE, []) for request in requests]
+    write_output(rows, args.out)
+    print(f"wrote {len(rows)} rows to {args.out} (format-only baseline)")
     if args.case:
-        requests = [r for r in requests if r["case_id"] in set(args.case)]
-    requests.sort(key=lambda r: int(r["case_id"].split("_")[1]))
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    with args.out.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle, lineterminator="\n")
-        writer.writerow(["case_id", "deletion_status", "steps_json"])
-        for request in requests:
-            writer.writerow([request["case_id"], "NOT_APPLICABLE", "[]"])
-    print(f"wrote {len(requests)} rows to {args.out} (format-only baseline)")
-    return 0
+        return 0  # a partial run cannot satisfy the one-row-per-request rule
+    result = validate_output(args.out, dataset)
+    report(result)
+    return 0 if result.ok else 1
 
 
 if __name__ == "__main__":

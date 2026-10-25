@@ -14,8 +14,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 |---|---|---|---|
 | 0001 | Completed | `15c97a8` | live smoke: jev OK, azure OK, gemini OK |
 | 0002 | Completed (before this run) | `66e8559` and earlier | recon |
-| 0003 | Completed | pending `spec 0003: typed models and tz-aware loaders` | 7 tests |
-| 0004–0016 | Not started | — | |
+| 0003 | Completed | `0695b52` | 7 tests |
+| 0004 | Completed | pending `spec 0004: deterministic serializer and hard output validator` | 13 tests; validator clean on sample_output.csv |
+| 0005–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -48,9 +49,9 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0004.
+- Continue with spec 0005.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `15c97a8` (spec 0001).
+Last published checkpoint: `0695b52` (spec 0003).

@@ -1,10 +1,10 @@
 # Spec 0004 — serializer-validator: tasks
 
-- [ ] serialize.py
-- [ ] validate.py
-- [ ] wire into main.py
-- [ ] tests incl. sample_output.csv passes, 8 mutation cases fail
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0004: <summary>`
+- [x] serialize.py
+- [x] validate.py
+- [x] wire into main.py
+- [x] tests incl. sample_output.csv passes, 8 mutation cases fail
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0004: <summary>`
 
 ## Validation commands
 
