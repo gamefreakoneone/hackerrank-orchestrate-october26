@@ -1600,3 +1600,44 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T10:25:23Z] Spec 0019: grounded discovery gap investigation (no new links)
+
+User Prompt (verbatim, secrets redacted):
+Start from the latest origin/claude/eager-cray-7fhtkf.
+Read @AGENTS.md, @CLAUDE.md, @code/docs/TECHNICAL_DESIGN.md,
+@code/docs/FEATURE_STATUS.md, 
+and code/docs/CORRECTIVE_HANDOFF.md.
+Implement specs 0017–0021 in order, following their requirements,
+designs, tasks and acceptance checks.
+
+After each completed spec, update metrics and documentation,
+append the log, export and verify the trace, then commit and PUSH.
+Verify publication before starting the next spec.
+Never mark failed acceptance checks as Completed.
+
+Remember the following principles:
+1. "YAGNI": Don't build it until you need it
+2. "DRY": Extract patterns after second duplication, not before
+3. "FALL FAST": Explicit Errors beat silent failures
+4. "Simple First": Write the obvious solution, optimise only if needed.
+5. "Delete Aggresively": Less code = fewer bugs
+6. "Semantic Naming": Always name variables, parameters, and API endpoints with verbose, self-documenting names that optimise for comprehension by both Humans and LLms, and not brevity. (eg: "wait_until_OBS_IS_save=true" vs "wait=true")
+
+Agent Response Summary:
+Verified 0018 on the remote (b0c7f27), captured before metrics and the discovery report (77/111 recall, 12/32 current accounts, 0 wrong, 3 extras), then investigated all 34 sample misses against participant-visible evidence. Every miss lacks a pre-cutoff record tying it to the subject (14 workflow claims only, 12 null/anonymized records without ownership, 5 post-cutoff only, 3 no evidence), so no discovery rule was added; the outcome is documented as investigation-only and the 0010 >=85% target stays unmet. Added an automatic miss-cause classifier and JSON output to discovery_report.py, DISCOVERY_GAP_REVIEW.md, and guard tests for null-profile, co-occurrence and repeated-request cutoffs. Metrics and outputs unchanged; 133 tests pass.
+
+Actions:
+* git fetch origin claude/specs-0017-0021-5s3kpe (remote = b0c7f27); run_eval.py/score.py for runs/corrective/0019_before and 0019_after (cached)
+* python code/tools/discovery_report.py --split all --verbose --out runs/corrective/0019_discovery_{before,after}.json
+* Edited code/tools/discovery_report.py; added code/tests/test_grounded_discovery_regressions.py and code/docs/DISCOVERY_GAP_REVIEW.md
+* python -m pytest code/tests -q (133 passed, 2 skipped); git diff --check; full-dataset linkage count (167 grounded / 351 ungrounded)
+* Updated spec 0019 docs, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md; exported trace via scripts/save_trace.sh
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

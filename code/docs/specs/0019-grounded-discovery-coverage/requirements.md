@@ -1,6 +1,6 @@
 # Spec 0019 — Grounded discovery coverage: requirements
 
-**Status:** Not started. **Depends on:** 0018.
+**Status:** Completed (investigation only). **Depends on:** 0018.
 
 ## Goal
 

@@ -10,8 +10,8 @@ until spec 0021 validates and promotes a new candidate.
 | Spec | Status | Measured result (32 samples, same cached provider responses before/after) |
 |---|---|---|
 | 0017 replica state and proof | Completed (`4f2a05a`) | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (outputs byte-identical); 7/9 new counterexample tests failed on the baseline, all pass; full-dataset state impact 3 obligations, 0 COMPLETE → INCOMPLETE |
-| 0018 required record preservation | Completed | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (byte-identical); missing tombstone/backup false COMPLETE reproduced and fixed; new REQUIRED_RECORD_MISSING blocker; full-dataset impact 0 changes (1 already-unsatisfied retained audit record now explicitly flagged) |
-| 0019 grounded discovery coverage | Not started | — |
+| 0018 required record preservation | Completed (`b0c7f27`) | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (byte-identical); missing tombstone/backup false COMPLETE reproduced and fixed; new REQUIRED_RECORD_MISSING blocker; full-dataset impact 0 changes (1 already-unsatisfied retained audit record now explicitly flagged) |
+| 0019 grounded discovery coverage | Completed (investigation only) | no defensible new link: 34 misses = 14 workflow-claims-only, 12 records without ownership, 5 post-cutoff only, 3 no evidence; recall 77/111, linkage 12/32 (0 wrong) unchanged; 0010 ≥85% target still unmet (`DISCOVERY_GAP_REVIEW.md`) |
 | 0020 reproducible evaluation reports | Not started | — |
 | 0021 validated final run packaging | Not started | — |
 
