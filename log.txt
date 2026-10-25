@@ -1683,3 +1683,45 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T10:52:33Z] Spec 0021: validated corrected final run and submission bundle
+
+User Prompt (verbatim, secrets redacted):
+Start from the latest origin/claude/eager-cray-7fhtkf.
+Read @AGENTS.md, @CLAUDE.md, @code/docs/TECHNICAL_DESIGN.md,
+@code/docs/FEATURE_STATUS.md, 
+and code/docs/CORRECTIVE_HANDOFF.md.
+Implement specs 0017–0021 in order, following their requirements,
+designs, tasks and acceptance checks.
+
+After each completed spec, update metrics and documentation,
+append the log, export and verify the trace, then commit and PUSH.
+Verify publication before starting the next spec.
+Never mark failed acceptance checks as Completed.
+
+Remember the following principles:
+1. "YAGNI": Don't build it until you need it
+2. "DRY": Extract patterns after second duplication, not before
+3. "FALL FAST": Explicit Errors beat silent failures
+4. "Simple First": Write the obvious solution, optimise only if needed.
+5. "Delete Aggresively": Less code = fewer bugs
+6. "Semantic Naming": Always name variables, parameters, and API endpoints with verbose, self-documenting names that optimise for comprehension by both Humans and LLms, and not brevity. (eg: "wait_until_OBS_IS_save=true" vs "wait=true")
+
+Agent Response Summary:
+Verified 0020 on the remote (6907176), then added candidate-first publication to main.py (staged, validated, then moved; failures keep the previous output), an explicit run manifest, a shared provenance module, the thin finalize_run.py, byte-exact .gitattributes for hashed artifacts, and publication/CRLF/packaging tests. Pushed code freeze b90914b, refreshed the evaluation bundle at that revision (pushed as 67bb114 without moving HEAD during the run), and ran the cold full run: 518 rows, 0 validator errors / 105 blocker warnings, 535 calls, est. $0.24. finalize_run.py published output.csv (sha256 81b31784...), final_run/ and both reports as one validated bundle; the offline rebuild is byte-identical, code.zip (271 files) passes the clean-room test, and 163 tests pass. Versus the overnight output 4 rows changed (2 INCOMPLETE->COMPLETE from spec 0017; 1 model-answer change at the category fallback).
+
+Actions:
+* git fetch (remote = 6907176); run_eval.py/score.py 0021_before and 0021_after (cached)
+* Edited code/main.py, evaluation/capture_inputs.py, evaluation/make_reports.py, tools/make_zip.py, README.md; added ghostaudit/provenance.py, tools/finalize_run.py, .gitattributes, tests test_run_publication.py and test_packaging_integrity.py
+* git commit/push checkpoint b90914b; capture_inputs.py; git commit-tree + push 67bb114 (HEAD unchanged until the run ended)
+* python code/main.py --cases all --no-cache --out runs/corrective/0021_candidate.csv --run-manifest-output runs/corrective/0021_candidate.manifest.json
+* validator on candidate and on output.csv with diagnostics; finalize_run.py; make_reports.py; make_zip.py; python -m pytest code/tests -q (163 passed, 2 skipped)
+* Updated spec 0021 docs, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md, SUBMISSION_CHECKLIST.md, INTERVIEW_NOTES.md; exported trace via scripts/save_trace.sh
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

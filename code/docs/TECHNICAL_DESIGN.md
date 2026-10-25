@@ -4,7 +4,7 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Post-implementation correction pass — in progress
+## Post-implementation correction pass — implemented (specs 0017–0021)
 
 Baseline: `2a722566e1367f409a5b3789ce61c1c19c566cfc`. The implementation review is
 `reviews/0001-implementation-review.md`; execution instructions are in `CORRECTIVE_HANDOFF.md`.
@@ -18,7 +18,7 @@ the owning spec's implementation commit, preserving the original decision histor
 | 0018 (**implemented**) | Required record presence and required identifier/restore treatment are separate predicates. Absence cannot satisfy a policy that requires the record to remain. | Missing tombstone/retained-backup regressions; compliant retained records pass; unsupported restoration actions are never invented. |
 | 0019 (**done: investigation only**, `DISCOVERY_GAP_REVIEW.md`) | Improve only supported identifier/reference discovery; record unresolved causes and provenance separately from precision/coverage. | Comparable before/after measurements or a justified investigation-only outcome. |
 | 0020 (**implemented**) | Derive claims from preserved, revision-labelled evaluation artifacts; distinguish oracle-assisted diagnostics from end-to-end measurements. | Reports rebuild without model calls or an unrecorded `runs/` dependency; missing/mismatched required inputs fail explicitly. |
-| 0021 | Validate candidates before replacing selected outputs and publish matching output, diagnostics, manifest, reports and usage ledger. | Failure leaves the previous selected output intact; release bundle and rebuilt archive validate together. |
+| 0021 (**implemented**) | Validate candidates before replacing selected outputs and publish matching output, diagnostics, manifest, reports and usage ledger. | Failure leaves the previous selected output intact; release bundle and rebuilt archive validate together. |
 
 Keep the three output statuses and seven Step fields unchanged. Any added copy-state, preservation-proof or
 missing-retained-record information is internal/diagnostic, with every consumer and validator updated in the
@@ -258,7 +258,10 @@ python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [
 ```
 
 Default `--cases all --out <repo>/output.csv`. `--cases sample` reads
-`sample_deletion_requests.csv`. Exit code ≠ 0 if the validator fails. `sample_output.csv` is read
+`sample_deletion_requests.csv`. Exit code ≠ 0 if the validator fails. Since 0021 the output and diagnostics are
+staged, validated and only then moved over `--out` (a failure leaves the previous files); `--run-manifest-output PATH`
+names the run manifest; a `--case` subset cannot target the selected output. `code/tools/finalize_run.py` promotes a
+validated default-configuration candidate together with same-revision evaluation inputs and both reports. `sample_output.csv` is read
 only by `code/evaluation/`, never by `ghostaudit/`.
 
 ## 4. Repo layout
@@ -466,3 +469,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0018** Preservation is a separate predicate derived from the rule action (REDACT / ANONYMIZE / RETAIN keep the record; DELETE and data flows do not); absence satisfies only the treatment of a copy, never preservation; `REQUIRED_RECORD_MISSING` blocker; tombstones must keep the subject's user_id; findings only for treatment violations; shared `BLOCKER_FLAGS` | Review finding 2: missing tombstone/backup accepted as COMPLETE; AGENTS.md §6.5; no saved row affected (0 full-dataset changes) |
 | 2026-10-25 | **0019** No discovery rule added: all 34 sample misses lack a pre-cutoff record tying them to the subject (14 workflow claims only, 12 records without ownership, 5 post-cutoff only, 3 no evidence); miss causes are classified by `discovery_report.py`; 0010's ≥85% recall target stays unmet (77/111) | Contract over score: timing, co-occurrence and post-cutoff links are guesses |
 | 2026-10-25 | **0020** Evaluation reports are rendered only from a hashed `evaluation_inputs.json` bundle (captured at a committed revision by `capture_inputs.py`) plus the final manifest; `make_reports.py` makes no model call, verifies hashes/coverage/configurations/revisions and fails with exit 1 on any mismatch; claims are computed from per-case scores; a revision mismatch must be acknowledged and is labelled "NOT a unified release" | Review finding 4: false exact-plan claim, `runs/` dependency, validator command without diagnostics |
+| 2026-10-25 | **0021** Candidate-first publication in `main.py`; release = candidate + diagnostics + usage ledger + same-revision evaluation inputs + reports, promoted only by `finalize_run.py` after validation; producing revision = committed code checked by `uncommitted_producing_code`; hashed artifacts stored `-text`; corrected cold run `0021_candidate_20261025T104010Z` at `b90914b` selected | Review finding 5 and the CRLF checksum observation; the run is the default configuration only |

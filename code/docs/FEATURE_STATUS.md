@@ -25,7 +25,7 @@ spec whose dependencies are not `Completed`.
 | 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Completed | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
 | 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Completed (investigation only) | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
 | 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Completed | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
-| 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Not started | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
+| 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Completed | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
 
 ## Current correction pass
 
@@ -33,7 +33,7 @@ The overnight implementation is the historical baseline at `2a722566e1367f409a5b
 originally pushed on `claude/nifty-tesla-4ig5f5` and fast-forwarded into `claude/eager-cray-7fhtkf` for this pass.
 Follow `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`. Work branch (cloud session's designated
 push branch): `claude/specs-0017-0021-5s3kpe`, started from `origin/claude/eager-cray-7fhtkf` @ `bf79d4a`.
-**0017–0020 Completed; next: 0021.**
+**0017–0021 Completed.** Selected output: run `0021_candidate_20261025T104010Z`, producing code `b90914b`, sha256 `81b31784…0ecb`.
 
 The original 0001–0016 statuses record the overnight milestones, not a claim that all current correctness or
 acceptance gaps are closed. In particular, 0010 reported Completed with recall **77/111 versus the ≥85% target**;
@@ -52,7 +52,10 @@ commit (a commit cannot contain its own SHA).
 | 0018 | `b0c7f27` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `b0c7f275cfe8` |
 | 0019 | `52a1854` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `52a1854e805b` |
 | 0020 checkpoint | `0d7c07d` (code freeze recorded in the evaluation bundle) | `claude/specs-0017-0021-5s3kpe` | yes — remote = local `0d7c07dd7504` |
-| 0020 | `spec 0020: make evaluation reports reproducible and accurate` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
+| 0020 | `6907176` | `claude/specs-0017-0021-5s3kpe` | yes — remote = local `69071766462e` |
+| 0021 checkpoint | `b90914b` (producing code of the final run) | `claude/specs-0017-0021-5s3kpe` | yes — remote = local `b90914b52411` |
+| 0021 bundle | `67bb114` (evaluation inputs at `b90914b`; artifacts only) | `claude/specs-0017-0021-5s3kpe` | yes — remote `67bb114a4aa0` |
+| 0021 | `spec 0021: validate final run and submission bundle` | `claude/specs-0017-0021-5s3kpe` | see the log / final report |
 
 ## Planning history
 

@@ -105,7 +105,8 @@ evaluation inputs from another revision; it stages everything first, then replac
 two reports and `output.csv` (last) and re-checks them. The replacement is a sequence of renames, not atomic: an
 interruption reports the run id and the previous bundle's location (the last commit remains the recovery point).
 `.gitattributes` stores the hashed artifacts (`output.csv`, `final_run/`, `corrective_run/`) byte-exact (`-text`),
-so their SHA-256 values also hold on CRLF checkouts.
+so their SHA-256 values also hold on CRLF checkouts. The run manifest reads the Git revision when it is written:
+do not commit while a run is in flight.
 `--allow-revision-mismatch` is needed only when the evaluation inputs and the selected final run come from different
 code revisions; the report is then labelled "NOT a unified release".
 

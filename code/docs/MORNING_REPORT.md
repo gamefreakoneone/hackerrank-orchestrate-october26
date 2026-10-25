@@ -3,17 +3,26 @@
 ## Corrective pass (specs 0017–0021) — current progress
 
 Branch `claude/specs-0017-0021-5s3kpe` (Claude Code cloud session, started from `origin/claude/eager-cray-7fhtkf`
-@ `bf79d4a`). Everything below this section is the **historical overnight report** (code `2a72256`/`375604e`); its
-numbers were not produced by the corrected code. Root `output.csv` and `code/evaluation/final_run/` are unchanged
-until spec 0021 validates and promotes a new candidate.
+@ `bf79d4a`). Everything below the next table is the **historical overnight report** (code `2a72256`/`375604e`); its
+numbers were not produced by the corrected code.
+
+**Corrected release (spec 0021):** root `output.csv` = run `0021_candidate_20261025T104010Z`, cold cache, producing
+code `b90914b`, sha256 `81b317844674c62981d43b3c6eb575fc30520737d5e32078de3ea9a86e9e0ecb`; 518 rows, INCOMPLETE 459 /
+COMPLETE 49 / NOT_APPLICABLE 10; validator with its diagnostics 0 errors / 105 blocker warnings; 535 model calls,
+273,276 input / 92,347 output tokens, est. $0.24 (unverified prices). Output, `final_run/` (diagnostics, ledger,
+manifest), the same-revision evaluation bundle `corrective_run/` and both reports were validated and published together
+by `code/tools/finalize_run.py`; `make_reports.py` rebuilds the reports byte-identically offline; `code.zip` (271 files)
+passes the clean-room packaging test. Versus the overnight output 4 rows differ (case_86, case_390 → COMPLETE; case_33,
+case_61 stay INCOMPLETE). Limits: 342/508 deletion requests ungrounded; discovery 77/111 (≥85% target unmet).
+Nothing was submitted.
 
 | Spec | Status | Measured result (32 samples, same cached provider responses before/after) |
 |---|---|---|
 | 0017 replica state and proof | Completed (`4f2a05a`) | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (outputs byte-identical); 7/9 new counterexample tests failed on the baseline, all pass; full-dataset state impact 3 obligations, 0 COMPLETE → INCOMPLETE |
 | 0018 required record preservation | Completed (`b0c7f27`) | status 23/32 → 23/32, step F1 0.896 → 0.896, exact 9/32 → 9/32 (byte-identical); missing tombstone/backup false COMPLETE reproduced and fixed; new REQUIRED_RECORD_MISSING blocker; full-dataset impact 0 changes (1 already-unsatisfied retained audit record now explicitly flagged) |
 | 0019 grounded discovery coverage | Completed (investigation only, `52a1854`) | no defensible new link: 34 misses = 14 workflow-claims-only, 12 records without ownership, 5 post-cutoff only, 3 no evidence; recall 77/111, linkage 12/32 (0 wrong) unchanged; 0010 ≥85% target still unmet (`DISCOVERY_GAP_REVIEW.md`) |
-| 0020 reproducible evaluation reports | Completed | reports rebuild model-free from the hashed bundle `code/evaluation/corrective_run/` (captured at `0d7c07d`); claims derived (9 of 12 grounded samples exact, not "every"); missing/altered/mismatched inputs exit 1; validator command fixed; ablations: deterministic 21/32, no-history 22/32, trust-claims 23/32, ranked 23/32 (8 right / 12 wrong guesses); custom 9/9 |
-| 0021 validated final run packaging | Not started | — |
+| 0020 reproducible evaluation reports | Completed (`6907176`) | reports rebuild model-free from the hashed bundle `code/evaluation/corrective_run/` (captured at `0d7c07d`); claims derived (9 of 12 grounded samples exact, not "every"); missing/altered/mismatched inputs exit 1; validator command fixed; ablations: deterministic 21/32, no-history 22/32, trust-claims 23/32, ranked 23/32 (8 right / 12 wrong guesses); custom 9/9 |
+| 0021 validated final run packaging | Completed | candidate-first publication + `finalize_run.py`; cold full run at `b90914b` validated and published (above); sample metrics unchanged 23/32, F1 0.896, exact 9/32; 163 tests incl. clean-room packaging |
 
 ## Historical overnight report (not re-measured)
 

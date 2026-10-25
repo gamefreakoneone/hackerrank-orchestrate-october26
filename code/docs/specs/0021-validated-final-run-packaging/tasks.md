@@ -1,15 +1,15 @@
 # Spec 0021 — Validated final run and packaging: tasks
 
-- [ ] Confirm 0020 is completed/pushed; capture before metrics and preserve the existing selected run.
-- [ ] Implement candidate-first publication, explicit manifest output and the thin finalizer; document paths.
-- [ ] Add planned failure/packaging regression tests and run required checks with `RUN_LIVE` unset.
-- [ ] If runtime changed, commit/push an In progress code-freeze checkpoint and record its actual SHA.
-- [ ] Refresh the 0020 default/ablation/custom evaluation-input bundle from that frozen code and record hashes.
-- [ ] Run/validate the cold full candidate, finalize the matching artifacts/reports and rebuild the package.
-- [ ] Capture after metrics; verify the extracted package layout and model-free report rebuild.
-- [ ] Update status/tasks/FEATURE_STATUS, MORNING_REPORT, SUBMISSION_CHECKLIST and interview notes; append log
+- [x] Confirm 0020 is completed/pushed; capture before metrics and preserve the existing selected run.
+- [x] Implement candidate-first publication, explicit manifest output and the thin finalizer; document paths.
+- [x] Add planned failure/packaging regression tests and run required checks with `RUN_LIVE` unset.
+- [x] If runtime changed, commit/push an In progress code-freeze checkpoint and record its actual SHA.
+- [x] Refresh the 0020 default/ablation/custom evaluation-input bundle from that frozen code and record hashes.
+- [x] Run/validate the cold full candidate, finalize the matching artifacts/reports and rebuild the package.
+- [x] Capture after metrics; verify the extracted package layout and model-free report rebuild.
+- [x] Update status/tasks/FEATURE_STATUS, MORNING_REPORT, SUBMISSION_CHECKLIST and interview notes; append log
       and export/verify trace. Label remaining limitations and incomplete evidence accurately.
-- [ ] Commit `spec 0021: validate final run and submission bundle`, push and verify publication. Report actual
+- [x] Commit `spec 0021: validate final run and submission bundle`, push and verify publication. Report actual
       branch/SHA and selected-run provenance. Do not submit automatically.
 
 ## Validation commands

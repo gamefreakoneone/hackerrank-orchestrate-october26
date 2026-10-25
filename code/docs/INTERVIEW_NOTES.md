@@ -29,8 +29,8 @@ state per resource → policy obligations → plan → canonical serialization �
   `SnapshotCoverage` (an empty collection still proves absence).
 - **Grounded account link.** An account belongs to the subject only if one eligible record carries a subject identifier
   and the account id (readback trace, export lookup with a profile, history `record_lookup`, catalog link, reference
-  edge). Workflow timing only **ranks** candidates for diagnostics. 20/32 samples (342/508 deletion requests) have no
-  grounded link: they carry `ACCOUNT_UNGROUNDED` and can never be COMPLETE.
+  edge). Workflow timing only **ranks** candidates for diagnostics. 20/32 samples (342/508 deletion requests in the
+  corrected run) have no grounded link: they carry `ACCOUNT_UNGROUNDED` and can never be COMPLETE.
 - **State, per storage copy (0017).** Only SQL table names identify copies (primary, failover/read/reporting/regional
   replicas); exports, bundles, service reads, screens and documents read the system of record. Per copy the latest
   observation wins by observation time (snapshot header, read/log time, record time; file capture time only gates
@@ -74,18 +74,26 @@ reported COMPLETE, audit_at 2026-10-01T12:00Z.
 
 | | Status | Account linkage | Step F1 | Sequence exact |
 |---|---|---|---|---|
-| all 32 samples | 23/32 (0.719) — equals the pre-registered conditional bound | 12/32 correct, 0 wrong | 0.898 (P 0.988, R 0.824) | 9/32 |
-| dev 20 / holdout 12 | 0.750 / 0.667 | 7/20 / 5/12 | 0.904 / 0.889 | 5/20 / 4/12 |
+| all 32 samples | 23/32 (0.719) — equals the pre-registered conditional bound | 12/32 correct, 0 wrong | 0.896 (P 0.981, R 0.824) | 9/32 |
+| dev 20 / holdout 12 | 0.750 / 0.667 | 7/20 / 5/12 | 0.900 / 0.889 | 5/20 / 4/12 |
 
-- Every status miss is a gold-COMPLETE sample without a grounded account (we refuse to name a guessed account). Where the
-  link is grounded, every sample plan matches gold exactly; 104/111 gold resource states and 75/75 gold citations are
-  reproduced when the resource is known.
+(Corrected code `b90914b`, cached responses of a live run; the overnight figures were F1 0.898 from different live
+provider responses.)
+
+- Every status miss is a gold-COMPLETE sample without a grounded account (we refuse to name a guessed account). 9 of the
+  12 grounded samples have an exactly matching plan (an earlier report wrongly said all). Oracle-assisted component
+  check (given the gold resources): 103/111 states and 75/75 citations. End-to-end discovery: 77/111 resources (the
+  0010 ≥85% target is unmet; `DISCOVERY_GAP_REVIEW.md`).
 - Custom validation: 8 cases / 9 requests (historical email + decoy, post-audit evidence, German access request,
   tombstone + active sync, retained backup, expired retention, repeated request, ungrounded account) — expected outputs
   committed before running; 9/9 pass. Four metamorphic tests pass.
-- Ablations: no model 21/32; no history 22/32; trust claims 23/32 (proof changes only); ranked guessed accounts raise
-  sequence exact to 13/32 but guesses are wrong 12/20 times — kept out of the submission.
-- Final cold run: 535 model calls, 273k input / 89k output tokens, estimated $0.23 (third-party price estimates).
+- Ablations: no model 21/32; no history 22/32; trust claims 23/32; ranked guessed accounts raise sequence exact to
+  12/32 but guesses are wrong 12/20 times — kept out of the submission.
+- Corrected final cold run `0021_candidate_20261025T104010Z` (code `b90914b`): 518 rows, INCOMPLETE 459 / COMPLETE 49 /
+  NOT_APPLICABLE 10, validator 0 errors / 105 blocker warnings; 535 model calls, 273k input / 92k output tokens,
+  estimated $0.24 (unverified third-party prices). Versus the overnight output 4 rows changed: case_86 and case_390
+  become COMPLETE (a later NOT_FOUND read of the same copy supersedes an earlier FOUND), case_33 drops an export a later
+  full snapshot omits, case_61 gets an UNKNOWN_STATE obligation because the live category fallback answer changed.
 
 ## 6. Failures found and fixed
 
@@ -107,7 +115,10 @@ Corrective pass after an independent review (specs 0017–0021):
 
 ## 7. Known limits / what I would do next
 
-- Grounded linkage is the binding constraint (166/508 deletion requests). More grounded sources would raise status
+- Grounded linkage is the binding constraint (166/508 deletion requests in the corrected run). More grounded sources would raise status
   accuracy directly; the evidence currently offers none for the remaining accounts, so they stay INCOMPLETE.
 - Anonymized analytics records linked only through workflow claims are not discovered (same rule).
 - The absence rule was chosen on four sample citations; the moved-file metamorphic test documents its replica preference.
+- Model answers at the bounded points are not perfectly repeatable across live runs (case_61's category fallback; Gemini
+  output-token counts); every run's ledger and diagnostics record what was actually returned.
+- A run reads the Git revision when it writes its manifest: do not commit while a run is in flight.

@@ -1,6 +1,6 @@
 # Spec 0021 — Validated final run and packaging: requirements
 
-**Status:** Not started. **Depends on:** 0020.
+**Status:** Completed. **Depends on:** 0020.
 
 ## Goal
 

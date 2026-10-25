@@ -3,35 +3,39 @@
   "ablate": [],
   "case": null,
   "cases": "all",
-  "data_root": "dataset",
+  "data_root": "/home/user/hackerrank-orchestrate-october26/dataset",
   "no_cache": true,
   "offline": false,
-  "out": "runs/final/output_candidate.csv",
+  "out": "runs/corrective/0021_candidate.csv",
+  "run_manifest_output": "runs/corrective/0021_candidate.manifest.json",
   "ungrounded_account_steps": "none"
  },
  "diagnostics": "code/evaluation/final_run/diagnostics.jsonl",
- "git_revision": "375604e2c3387748ee0c942e0c28e46433bcec9a",
+ "diagnostics_sha256": "ae42396fadf29f402a996e051cd6d26cab5a805f8368e0fe2a27ac72888ef56e",
+ "evaluation_inputs": "code/evaluation/corrective_run/evaluation_inputs.json",
+ "git_revision": "b90914b524111fb284f8a8a8bcf3c5b7ecb5835a",
  "original_paths": {
-  "diagnostics": "runs/final/output_candidate.diagnostics.jsonl",
-  "manifest": "runs/output_candidate_20261025T085130Z.manifest.json",
-  "output": "runs/final/output_candidate.csv",
-  "usage_ledger": "runs/usage_output_candidate_20261025T085130Z.jsonl"
+  "diagnostics": "runs/corrective/0021_candidate.diagnostics.jsonl",
+  "manifest": "runs/corrective/0021_candidate.manifest.json",
+  "output": "runs/corrective/0021_candidate.csv",
+  "usage_ledger": "/home/user/hackerrank-orchestrate-october26/runs/usage_0021_candidate_20261025T104010Z.jsonl"
  },
- "output_sha256": "09c8ecf6781e295799866b3e875c21f456de240f8d0b31f4b960a8f59ac786e3",
- "preserved_copies": {
-  "diagnostics": "code/evaluation/final_run/diagnostics.jsonl",
-  "usage_ledger": "code/evaluation/final_run/usage_ledger.jsonl"
- },
- "promoted_to": "output.csv (repository root), byte-identical (sha256 verified)",
+ "output_sha256": "81b317844674c62981d43b3c6eb575fc30520737d5e32078de3ea9a86e9e0ecb",
+ "promoted_to": "output.csv (repository root)",
  "rows": 518,
- "run_id": "output_candidate_20261025T085130Z",
+ "run_id": "0021_candidate_20261025T104010Z",
  "usage_ledger": "code/evaluation/final_run/usage_ledger.jsonl",
+ "usage_ledger_sha256": "445a8b5b1024577a528e4a8f912add4f305491a41429539b95d419f183a293b3",
  "usage_overall": {
   "attempts": 535,
   "cached_calls": 0,
   "calls": 535,
-  "cost_usd": 0.22664782800000002,
+  "cost_usd": 0.24030907799999998,
   "input_tokens": 273276,
-  "output_tokens": 88704
+  "output_tokens": 92347
+ },
+ "validation": {
+  "errors": 0,
+  "warnings": 105
  }
 }
