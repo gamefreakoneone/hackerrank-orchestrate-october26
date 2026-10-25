@@ -31,10 +31,16 @@ state per resource → policy obligations → plan → canonical serialization �
   and the account id (readback trace, export lookup with a profile, history `record_lookup`, catalog link, reference
   edge). Workflow timing only **ranks** candidates for diagnostics. 20/32 samples (342/508 deletion requests) have no
   grounded link: they carry `ACCOUNT_UNGROUNDED` and can never be COMPLETE.
-- **State.** Latest establishing observation; observed absence (404, rows=0, NOT_FOUND) is cited as observed; otherwise
-  absence by snapshot omission (drop snapshots superseded by the last DELETE claim; latest replica-covering one, else
-  latest; and a record last seen in a replica needs a snapshot of that replica); state-check activity only as a last
-  resort. Operational claims ("DELETE_RECORD SUCCESS") never set state.
+- **State, per storage copy (0017).** Only SQL table names identify copies (primary, failover/read/reporting/regional
+  replicas); exports, bundles, service reads, screens and documents read the system of record. Per copy the latest
+  observation wins by observation time (snapshot header, read/log time, record time; file capture time only gates
+  eligibility); a copy last seen present is cleared only by a later snapshot of that same copy. Any violating copy
+  makes the obligation unsatisfied and is the cited proof, so a newer primary 404 can no longer hide a replica.
+  Records-assurance bundles list ~10 subjects each, so their omissions count only for those subjects. A never-observed
+  resource keeps the omission rule (latest replica-covering snapshot after the last DELETE claim, else latest, else
+  UNKNOWN); state-check activity is a last resort; operational claims never set state.
+- **Preservation (0018).** REDACT / ANONYMIZE / RETAIN keep the record: absence never satisfies them, a tombstone must
+  keep the subject's user_id, and a missing kept record raises `REQUIRED_RECORD_MISSING` (no invented finding).
 
 ## 3. Remediation planning
 
@@ -89,6 +95,15 @@ reported COMPLETE, audit_at 2026-10-01T12:00Z.
    must cover the replica where the record was last seen.
 4. Generic snapshots claimed coverage of collections they never held → coverage limited to collections in the file.
 5. Negated requests contain deletion words → keyword check is only a cross-check; Azure adjudicates disagreements.
+
+Corrective pass after an independent review (specs 0017–0021):
+
+6. A newer primary-only 404 or clean record could clear an uncleared replica (false COMPLETE) → state per copy.
+7. Absence satisfied REDACT / ANONYMIZE / retained-backup obligations (false COMPLETE) → separate preservation check.
+8. 34 sample misses investigated: none has a pre-cutoff record tying it to the subject → no new link rule (honest gap).
+9. The report claimed every grounded sample was exact (9 of 12 are) and read ignored `runs/` files → reports are built
+   from a hashed evaluation bundle without model calls and fail on any mismatch.
+10. `main.py` overwrote the selected output before validating → candidate-first publication and a release finalizer.
 
 ## 7. Known limits / what I would do next
 

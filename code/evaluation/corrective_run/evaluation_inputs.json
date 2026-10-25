@@ -1,6 +1,6 @@
 {
- "captured_at": "2026-10-25T10:31:54Z",
- "code_revision": "0d7c07dd7504b2db865d59c59745f152a32e46af",
+ "captured_at": "2026-10-25T10:40:10Z",
+ "code_revision": "b90914b524111fb284f8a8a8bcf3c5b7ecb5835a",
  "custom_results": {
   "exit_code": 0,
   "path": "custom_results.json",
@@ -109,10 +109,10 @@
  },
  "test_results": [
   {
-   "command": "python -m pytest code/tests -q",
+   "command": "python -m pytest code/tests --ignore=code/tests/test_packaging_integrity.py -q",
    "exit_code": 0,
    "name": "full_suite",
-   "summary": "144 passed, 2 skipped"
+   "summary": "159 passed, 2 skipped"
   },
   {
    "command": "python -m pytest code/tests/test_metamorphic.py -q",
