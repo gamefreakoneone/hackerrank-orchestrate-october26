@@ -585,3 +585,31 @@ repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
 
+## [2026-10-25T06:31:48Z] Save traces per commit instead of per turn
+
+User Prompt (verbatim, secrets redacted):
+Option 1, with one change:
+1. Remove the Stop hook from .claude/settings.json; keep SessionEnd.
+2. In CLAUDE.md, change the trace rule to: "Run scripts/save_trace.sh immediately before
+   every commit and include agent-trace/ and log.txt in that commit. When the user says
+   'wrap up', run the script, commit 'trace: session wrap-up', push, and confirm the tree
+   is clean."
+3. Run the script, commit "infra: save traces per commit instead of per turn", push.
+   Reply with the SHA, then stop.
+
+Agent Response Summary:
+Removed the Stop hook (SessionEnd kept) so turn ends no longer dirty the tree and trip the git-check hook. Replaced the CLAUDE.md trace rule with the per-commit rule and the "wrap up" procedure. Ran save_trace.sh, validated the JSONL and secret grep, committed and pushed.
+
+Actions:
+* git stash / pull --rebase / stash pop
+* Edited .claude/settings.json and CLAUDE.md
+* Ran scripts/save_trace.sh; git commit "infra: save traces per commit instead of per turn"; git push
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/eager-cray-7fhtkf
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none
+

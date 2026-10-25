@@ -30,10 +30,10 @@ This file adds OUR development workflow on top of AGENTS.md.
 - Every spec from 0005 onward must record the scorer snapshot (status accuracy, step F1,
   sequence exact-match) on the dev split in `status.md`, before and after the change.
 - Commit each completed spec separately: `spec NNNN: <summary>`. Dated commits are evidence.
-- Every commit includes the current `log.txt` and `agent-trace/`.
-- Before the final reply of every session: run `scripts/save_trace.sh` (also wired as the Stop/SessionEnd
-  hook in `.claude/settings.json`; manual run: pipe `{"session_id":…,"transcript_path":…}` to it),
-  then commit and push.
+- Run `scripts/save_trace.sh` immediately before every commit and include `agent-trace/` and `log.txt` in
+  that commit. When the user says "wrap up", run the script, commit `trace: session wrap-up`, push, and
+  confirm the tree is clean. (Manual run: pipe `{"session_id":…,"transcript_path":…}` to the script; it is
+  also wired as the SessionEnd hook in `.claude/settings.json`.)
 - `agent-trace/` lives at the repo root, never inside `code/`, so it stays out of `code.zip`. At the end it is
   packaged separately as `agent-trace.zip` (see `agent_trace_instructions.md`).
 - Keep `code/README.md` current whenever setup, commands, or env vars change.
