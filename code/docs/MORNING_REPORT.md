@@ -23,8 +23,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0009 | Completed | `04c26e4` | 23 PNG records; 8 unreachable resources not in PNGs |
 | 0010 | Completed (recall target not met, contract-bound) | `f63f611` | linkage 12/32 (0 wrong); 167/518 grounded |
 | 0011 | Completed | `ef07015` | 77/77 discovered gold obligations correct |
-| 0012 | Completed | pending `spec 0012: planner, pipeline wiring and diagnostics` | dev status 0.750, F1 0.904 |
-| 0013–0016 | Not started | — | |
+| 0012 | Completed | `14df3a9` | dev status 0.750, F1 0.904 |
+| 0013 | Completed | pending `spec 0013: multilingual intent gate` | 508 deletion / 10 non-deletion; 32/32 samples deletion |
+| 0014–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -39,15 +40,16 @@ No time, call or spend limit was configured by the user or platform; none is ass
 ## Output stage
 
 **format-only baseline** at root — root `output.csv` holds 518 `NOT_APPLICABLE,[]` rows from the spec 0001 stub (untracked,
-not committed). No audited output has been promoted. A development full pass of the audited pipeline exists at
-`runs/dev_all.csv` (validator clean, intent gate not yet applied) — not a submission candidate.
+not committed). No audited output has been promoted. A development full pass of the audited pipeline with the intent gate exists at
+`runs/all.csv` (validator clean; 461 INCOMPLETE / 47 COMPLETE / 10 NOT_APPLICABLE) — a development run, not the
+cold-cache final run required by spec 0015.
 
 ## Providers
 
 | Provider | Live smoke (spec 0001) | Pipeline use |
 |---|---|---|
-| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | category fallback hook live (0011); intent in 0013 |
-| Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK` = gpt-6-luna) | OK (needs `reasoning_effort=none` for function tools; temperature 0 accepted) | not wired yet |
+| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | intent gate (0013) + category fallback (0011), live |
+| Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK` = gpt-6-luna) | OK (needs `reasoning_effort=none` for function tools; temperature 0 accepted) | intent adjudication (0013), live |
 | Gemini via Strands (`GEMINI_VISION_MODEL` = gemini-3.8-flash) | OK (structured output, temperature 0) | PNG extraction live (0009), 11 calls cached |
 
 ## Observed failure patterns
@@ -67,10 +69,10 @@ not committed). No audited output has been promoted. A development full pass of 
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0013 (intent gate).
+- Continue with spec 0014.
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `ef07015` (spec 0011).
+Last published checkpoint: `14df3a9` (spec 0012).

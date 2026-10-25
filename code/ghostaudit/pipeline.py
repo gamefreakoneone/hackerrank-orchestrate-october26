@@ -8,6 +8,7 @@ from ghostaudit.account_link import ACCOUNT_SYSTEM, AccountLink, link_account
 from ghostaudit.discovery import Discovered, discover
 from ghostaudit.evidence.index import Ledger, eligible
 from ghostaudit.identity import Subject, identifier_owner_index, resolve
+from ghostaudit.intent import IntentResult, classify
 from ghostaudit.loaders import Dataset
 from ghostaudit.models import Request
 from ghostaudit.models import Status, Step
@@ -101,12 +102,20 @@ def assess(request: Request, ctx: Context) -> Assessment:
     return Assessment(request, subject, discovered, link, outcome, categories, sources)
 
 
-def diagnostics_record(assessment: Assessment, status: Status, steps: list[Step]) -> dict:
+def classify_request_crosscheck(request: Request, ctx: Context, account_ids: list[str]) -> list[str]:
+    """CLASSIFY_REQUEST activities (≤ audit_at) that call a request on the subject's account non-deletion."""
+    return [a.activity_id for a in ctx.dataset.activity if a.event_type == "CLASSIFY_REQUEST"
+            and a.event_time <= request.audit_at and a.resource_id in account_ids]
+
+
+def diagnostics_record(assessment: Assessment, status: Status, steps: list[Step], intent: IntentResult,
+                       crosscheck: list[str]) -> dict:
     return {
         "case_id": assessment.request.case_id,
         "status": status.value,
         "flags": assessment.flags,
-        "intent": {"label": "DELETION", "source": "not evaluated before spec 0013"},
+        "intent": intent.as_dict(),
+        "classify_request_non_deletion": crosscheck,
         "subject": {"user_id": assessment.subject.user_id,
                     "historical_request_email": assessment.request.email.strip().lower()
                     in assessment.subject.historical_emails},
@@ -122,6 +131,12 @@ def diagnostics_record(assessment: Assessment, status: Status, steps: list[Step]
 
 
 def run_case(request: Request, ctx: Context) -> tuple[Status, list[Step], dict]:
+    intent = classify(request.request_text, ctx.llm)
+    if not intent.authorizes_deletion:          # NOT_APPLICABLE: no other pipeline step runs
+        return Status.NOT_APPLICABLE, [], {"case_id": request.case_id, "status": Status.NOT_APPLICABLE.value,
+                                           "flags": [], "intent": intent.as_dict()}
     assessment = assess(request, ctx)
     status, steps = plan(assessment.policy.obligations, assessment.flags)
-    return status, steps, diagnostics_record(assessment, status, steps)
+    link = assessment.account_link
+    crosscheck = classify_request_crosscheck(request, ctx, [a for a in [link.current, *link.historical] if a])
+    return status, steps, diagnostics_record(assessment, status, steps, intent, crosscheck)

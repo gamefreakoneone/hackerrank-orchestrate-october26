@@ -17,7 +17,7 @@ spec whose dependencies are not `Completed`.
 | 0010 | [discovery-and-state](specs/0010-discovery-and-state/) | Completed | 0006, 0007 (0009 optional) | Find every resource relevant to the subject and its state at audit_at. |
 | 0011 | [policy-obligations](specs/0011-policy-obligations/) | Completed | 0010 | Turn discovered resources + rules into obligations with satisfied/unsatisfied state. |
 | 0012 | [planner-and-evidence](specs/0012-planner-and-evidence/) | Completed | 0004, 0011 | Status decision, full step plan, deterministic evidence citation; end-to-end on samples. |
-| 0013 | [intent-gate](specs/0013-intent-gate/) | Not started | 0008, 0012 | Decide whether request_text authorizes deletion (multilingual). |
+| 0013 | [intent-gate](specs/0013-intent-gate/) | Completed | 0008, 0012 | Decide whether request_text authorizes deletion (multilingual). |
 | 0014 | [custom-eval-and-metamorphic](specs/0014-custom-eval-and-metamorphic/) | Not started | 0012, 0013 | Team-created evaluation cases and metamorphic tests (problem statement requires ≥3 custom cases). |
 | 0015 | [full-run-ablations-reports](specs/0015-full-run-ablations-reports/) | Not started | 0014 | Final cold-cache full run, ablations, and the two required evaluation reports. |
 | 0016 | [packaging-and-interview](specs/0016-packaging-and-interview/) | Not started | 0015 | Submission artifacts and interview preparation. |

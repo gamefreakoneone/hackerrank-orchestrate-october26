@@ -1,11 +1,11 @@
 # Spec 0013 — intent-gate: tasks
 
-- [ ] intent.py + lexicon
-- [ ] Jev question phrasing per typesafe skill
-- [ ] Azure fallback
-- [ ] tests: 32 samples DELETION, 6 synthetic non-deletion (access, correction, export, opt-out, multilingual)
-- [ ] disagreement report on all 518
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0013: <summary>`
+- [x] intent.py + lexicon
+- [x] Jev question phrasing per typesafe skill
+- [x] Azure fallback
+- [x] tests: 32 samples DELETION, 6 synthetic non-deletion (access, correction, export, opt-out, multilingual)
+- [x] disagreement report on all 518
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0013: <summary>`
 
 ## Validation commands
 

@@ -10,7 +10,7 @@ wrote 32 rows; validation: 0 errors, 9 warnings (INCOMPLETE without findings, ea
 $ python code/evaluation/score.py runs/sample.csv dataset/sample_output.csv --split dev
 status 0.750 (15/20); linkage 7/20 (precision 1.000); step P/R/F1 1.000/0.824/0.904 (103 matched, 103 pred, 125 gold);
 field acc on matched: phase 1.000, state 1.000, evidence_id 0.903, step_no 0.728; sequence exact 0.250 (5/20); LCS 0.746
---split holdout: status 8/12; F1 0.884; sequence exact 4/12
+--split holdout: status 8/12; F1 0.889; sequence exact 4/12
 --split all: status 23/32 (0.719); F1 0.898 (159/161 pred, 193 gold); evidence_id 0.899; sequence exact 9/32; LCS 0.724
 $ python -m pytest code/tests -q
 99 passed, 1 skipped

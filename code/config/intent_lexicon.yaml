@@ -1,0 +1,14 @@
+# Deletion vocabulary per language (lower-case substrings). A cross-check only: it never decides on its own when a
+# model answer is available, because negations ("I am not asking for deletion") also contain these words.
+deletion_terms:
+  en: [delete, deletion, deleted, deleting, removal, remove records, remove my, be removed, erase, erasure, remove my account, remove my profile, close my account,
+       close this account, account closed, closed my account, account-deletion, would like it closed, no longer need this account]
+  es: [elimin, borrar, borren, supresión, suprim, darme de baja]
+  pt: [excluir, exclusão, excluam, apagar, apaguem, eliminação]
+  fr: [supprim, suppression, effac]
+  de: [lösch, entfern]
+  it: [cancell, elimin]
+  nl: [verwijderen]
+  ja: [削除, 退会]
+  ko: [삭제, 탈퇴]
+  zh: [删除, 注销]
