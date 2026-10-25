@@ -2,7 +2,8 @@
 that established each obligation's state (timeline: observed state → snapshot omission → state-check activity)."""
 from __future__ import annotations
 
-from ghostaudit.models import OP_PHASE, OP_STATE, Obligation, Operation, Status, Step
+from ghostaudit.models import BLOCKER_FLAGS, OP_PHASE, OP_STATE, Obligation, Operation, Status, Step
+from ghostaudit.obligations import treatment_violated
 from ghostaudit.serialize import canonical
 
 O = Operation
@@ -14,7 +15,6 @@ TEMPLATES: dict[str, tuple[Operation | None, Operation | None, Operation]] = {
     "BLOCKED": (O.REPORT_RESTORE_RISK, O.BLOCK_RESTORE, O.VERIFY_RESTORE_BLOCKED),
     "DISABLED": (O.REPORT_ACTIVE_DATA_FLOW, O.DISABLE_DATA_FLOW, O.VERIFY_DATA_FLOW_DISABLED),
 }
-BLOCKER_FLAGS = {"ACCOUNT_UNGROUNDED", "UNKNOWN_STATE", "POLICY_UNDEFINED", "EMPTY_OBLIGATIONS"}
 
 
 def step(operation: Operation, obligation: Obligation, evidence_id: str) -> Step:
@@ -37,7 +37,7 @@ def plan(obligations: list[Obligation], flags: list[str]) -> tuple[Status, list[
         if status == Status.COMPLETE:
             steps.append(step(verification, obligation, obligation.proof))
             continue
-        if not obligation.satisfied and obligation.current != "UNKNOWN" and finding is not None:
+        if treatment_violated(obligation) and finding is not None:
             steps.append(step(finding, obligation, obligation.proof))
             steps.append(step(remediation, obligation, ""))
         steps.append(step(verification, obligation, ""))

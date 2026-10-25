@@ -1,12 +1,12 @@
 # Spec 0018 — Required record preservation: tasks
 
-- [ ] Complete and publish 0017; read all four files of 0018 and the applicable supplied rules.
-- [ ] Capture before metrics and reproduce missing-tombstone/missing-backup false compliance.
-- [ ] Implement explicit presence-plus-treatment checks and shared blocker handling.
-- [ ] Add planned preservation tests and update affected existing tests/contracts.
-- [ ] Run checks and capture after metrics; explain correctness-driven sample differences.
-- [ ] Update status/tasks/FEATURE_STATUS, design and morning report; append log and verify trace export.
-- [ ] Commit `spec 0018: enforce required record preservation`, push and verify remote publication before 0019.
+- [x] Complete and publish 0017; read all four files of 0018 and the applicable supplied rules.
+- [x] Capture before metrics and reproduce missing-tombstone/missing-backup false compliance.
+- [x] Implement explicit presence-plus-treatment checks and shared blocker handling.
+- [x] Add planned preservation tests and update affected existing tests/contracts.
+- [x] Run checks and capture after metrics; explain correctness-driven sample differences.
+- [x] Update status/tasks/FEATURE_STATUS, design and morning report; append log and verify trace export.
+- [x] Commit `spec 0018: enforce required record preservation`, push and verify remote publication before 0019.
 
 ## Validation commands
 

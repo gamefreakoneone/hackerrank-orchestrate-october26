@@ -9,12 +9,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ghostaudit.loaders import Dataset, load_dataset
-from ghostaudit.models import OP_ORDER, OP_PHASE, OP_STATE, Operation, Phase, Status, case_key
+from ghostaudit.models import BLOCKER_FLAGS, OP_ORDER, OP_PHASE, OP_STATE, Operation, Phase, Status, case_key
 from ghostaudit.serialize import OUTPUT_HEADER
 
 STEP_KEYS = {"step_no", "phase", "system_id", "resource_id", "operation", "state", "evidence_id"}
 STATE_CHECK_EVENT_TYPES = {"CHECK_DATA_FLOW", "CHECK_RESTORE_ACCESS"}
-BLOCKER_FLAGS = {"ACCOUNT_UNGROUNDED", "UNKNOWN_STATE", "POLICY_UNDEFINED", "EMPTY_OBLIGATIONS"}
 
 
 @dataclass

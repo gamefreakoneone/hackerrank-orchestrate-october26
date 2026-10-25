@@ -1559,3 +1559,44 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T10:20:34Z] Spec 0018: enforce required record preservation
+
+User Prompt (verbatim, secrets redacted):
+Start from the latest origin/claude/eager-cray-7fhtkf.
+Read @AGENTS.md, @CLAUDE.md, @code/docs/TECHNICAL_DESIGN.md,
+@code/docs/FEATURE_STATUS.md, 
+and code/docs/CORRECTIVE_HANDOFF.md.
+Implement specs 0017–0021 in order, following their requirements,
+designs, tasks and acceptance checks.
+
+After each completed spec, update metrics and documentation,
+append the log, export and verify the trace, then commit and PUSH.
+Verify publication before starting the next spec.
+Never mark failed acceptance checks as Completed.
+
+Remember the following principles:
+1. "YAGNI": Don't build it until you need it
+2. "DRY": Extract patterns after second duplication, not before
+3. "FALL FAST": Explicit Errors beat silent failures
+4. "Simple First": Write the obvious solution, optimise only if needed.
+5. "Delete Aggresively": Less code = fewer bugs
+6. "Semantic Naming": Always name variables, parameters, and API endpoints with verbose, self-documenting names that optimise for comprehension by both Humans and LLms, and not brevity. (eg: "wait_until_OBS_IS_save=true" vs "wait=true")
+
+Agent Response Summary:
+Verified spec 0017 on the remote (4f2a05a) before starting 0018, captured cached before metrics and reproduced the review's false compliance (missing tombstone -> COMPLETE/VERIFY_RECORD_REDACTED, missing retained backup -> COMPLETE/VERIFY_RESTORE_BLOCKED). Split treatment from preservation: preservation derives from the rule action (REDACT/ANONYMIZE/RETAIN), absence never satisfies it, tombstones must keep the subject's user_id, a new REQUIRED_RECORD_MISSING blocker is shared by planner and validator, and no finding or restore operation is invented for a missing record. After: 130 tests pass, sample outputs byte-identical, oracle state diagnostic unchanged (103/111), full-dataset impact 0 obligation/status changes. Spec 0018 marked Completed.
+
+Actions:
+* git fetch origin claude/specs-0017-0021-5s3kpe (remote = 4f2a05a); run_eval.py/score.py for runs/corrective/0018_before and 0018_after (cached)
+* Edited code/ghostaudit/obligations.py, models.py, policy.py, planner.py, validate.py, pipeline.py, evaluation/score.py, tools/state_report.py
+* Added code/tests/test_required_record_preservation.py; updated tests/test_obligations.py, tests/test_replica_state.py
+* python -m pytest code/tests -q (130 passed, 2 skipped); git diff --check; state_report.py; offline 518-case obligation diff
+* Updated spec 0018 docs, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md; exported trace via scripts/save_trace.sh
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

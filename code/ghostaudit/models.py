@@ -170,6 +170,15 @@ class Obligation(Frozen):
     proof_kind: Literal["file", "activity", "audit", ""]
     satisfied: bool
     copy_states: tuple[CopyState, ...] = ()   # every contributing copy; `proof` is the cited (violating) one
+    preservation_required: bool = False       # the rule keeps the record (REDACT / ANONYMIZE / RETAIN)
+    required_record_is_preserved: bool | None = None   # True: a copy is present (a tombstone with the subject's
+                                              # user_id); False: absent in every established copy or the tombstone
+                                              # lost its stable reference; None: unknown or not required
+
+
+# Completion blockers (TECHNICAL_DESIGN §3.5): shared by the planner and the validator.
+BLOCKER_FLAGS = frozenset({"ACCOUNT_UNGROUNDED", "UNKNOWN_STATE", "POLICY_UNDEFINED", "EMPTY_OBLIGATIONS",
+                           "REQUIRED_RECORD_MISSING"})
 
 
 def case_key(case_id: str) -> int:

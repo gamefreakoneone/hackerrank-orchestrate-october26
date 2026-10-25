@@ -27,7 +27,8 @@ def state(presence=None, enabled=None, restorable=None):
 
 def oblige(required, resource_state):
     return build_obligation(system_id="s", resource_id="r_1", category="C", required=required, condition="TRUE",
-                            state=resource_state, subject=SUBJECT)
+                            state=resource_state, subject=SUBJECT,
+                            preservation_required=required in ("REDACTED", "ANONYMIZED", "PRESENT", "BLOCKED"))
 
 
 @pytest.mark.parametrize("required,resource_state,current,satisfied", [
@@ -42,8 +43,9 @@ def oblige(required, resource_state):
     ("PRESENT", state(("absent", None)), "ABSENT", False),
     ("DISABLED", state(enabled=True), "ACTIVE", False),
     ("DISABLED", state(enabled=False), "DISABLED", True),
-    ("BLOCKED", state(restorable=True), "ACTIVE", False),
-    ("BLOCKED", state(restorable=False), "BLOCKED", True),
+    ("BLOCKED", state(("present", obs()), restorable=True), "ACTIVE", False),
+    ("BLOCKED", state(("present", obs()), restorable=False), "BLOCKED", True),
+    ("BLOCKED", state(restorable=False), "UNKNOWN", False),                  # retained backup presence unknown
     ("ABSENT", state(), "UNKNOWN", False),
 ])
 def test_templates(required, resource_state, current, satisfied):

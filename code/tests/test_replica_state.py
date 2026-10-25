@@ -52,7 +52,8 @@ def ledger_of(observations, coverages=()):
 def obligation(ledger, resource_id=ACCOUNT, system_id="account_service", category="USER_PROFILE", required="ABSENT"):
     state = state_at(resource_id, system_id, category, AUDIT_AT, ledger, None, SUBJECT.user_id)
     return build_obligation(system_id=system_id, resource_id=resource_id, category=category, required=required,
-                            condition="TRUE", state=state, subject=SUBJECT)
+                            condition="TRUE", state=state, subject=SUBJECT,
+                            preservation_required=required != "ABSENT")
 
 
 REPLICA_HOLDS_ACCOUNT = sql_row("evidence_901", 10, "failover_replica", ACCOUNT, "customer_profiles", email=EMAIL)

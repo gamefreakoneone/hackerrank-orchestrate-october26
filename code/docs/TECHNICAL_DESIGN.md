@@ -15,7 +15,7 @@ the owning spec's implementation commit, preserving the original decision histor
 | Owner | Planned correction | Completion evidence |
 |---|---|---|
 | 0017 (**implemented**) | Reconstruct state/treatment per identified physical copy, then combine the required copy scopes. Evidence formats are not automatically copy identities. A primary-only absence or clean record cannot clear an uncleared replica. | Cross-copy counterexamples fail on the baseline and pass after correction; same-copy later observations can supersede older state. |
-| 0018 | Required record presence and required identifier/restore treatment are separate predicates. Absence cannot satisfy a policy that requires the record to remain. | Missing tombstone/retained-backup regressions; compliant retained records pass; unsupported restoration actions are never invented. |
+| 0018 (**implemented**) | Required record presence and required identifier/restore treatment are separate predicates. Absence cannot satisfy a policy that requires the record to remain. | Missing tombstone/retained-backup regressions; compliant retained records pass; unsupported restoration actions are never invented. |
 | 0019 | Improve only supported identifier/reference discovery; record unresolved causes and provenance separately from precision/coverage. | Comparable before/after measurements or a justified investigation-only outcome. |
 | 0020 | Derive claims from preserved, revision-labelled evaluation artifacts; distinguish oracle-assisted diagnostics from end-to-end measurements. | Reports rebuild without model calls or an unrecorded `runs/` dependency; missing/mismatched required inputs fail explicitly. |
 | 0021 | Validate candidates before replacing selected outputs and publish matching output, diagnostics, manifest, reports and usage ledger. | Failure leaves the previous selected output intact; release bundle and rebuilt archive validate together. |
@@ -170,7 +170,19 @@ class Obligation(BaseModel, frozen=True):
     proof_kind: Literal["file", "activity", "audit", ""]
     satisfied: bool                   # False whenever current == "UNKNOWN"
     copy_states: tuple[CopyState, ...] = ()   # 0017, diagnostics: (physical_copy, current, proof, rule) per copy
+    preservation_required: bool = False       # 0018: rule action REDACT / ANONYMIZE / RETAIN keeps the record
+    required_record_is_preserved: bool | None = None   # 0018: a copy present (tombstone: with the subject's user_id);
+                                              # False = absent everywhere / stable reference lost; None = unknown
 ```
+
+Treatment and preservation (0018): `satisfied` = every copy satisfies the treatment (`TREATMENT_SATISFIED_BY`: an
+absent copy exposes and copies nothing) **and**, when preservation is required, `required_record_is_preserved`.
+Absence is never blanket satisfaction of REDACT / ANONYMIZE / RETAIN (incl. BACKUP_ARCHIVE). A kept record absent in
+every established copy stays `current="ABSENT"` (cited with its absence proof) and raises `REQUIRED_RECORD_MISSING`;
+a compliant kept record cites a present compliant copy. Findings and remediation are emitted only for
+`treatment_violated` (record / identifiers / active flow / restore path present); the schema has no operation to
+recreate a missing record, so none is invented — only the future verification step remains. A later absence of the
+same copy supersedes an older enabled/restorable fact.
 
 Per-copy aggregation (0017): each storage copy's latest fact gets its own current state; any copy whose state does
 not satisfy `required` makes the obligation unsatisfied and is the cited `proof` (latest violating copy); otherwise
@@ -187,14 +199,14 @@ Templates (from rules + gold):
 | BLOCKED (BACKUP_ARCHIVE) | REPORT_RESTORE_RISK | BLOCK_RESTORE | VERIFY_RESTORE_BLOCKED |
 | DISABLED (active data flow) | REPORT_ACTIVE_DATA_FLOW | DISABLE_DATA_FLOW | VERIFY_DATA_FLOW_DISABLED |
 
-Planner: INCOMPLETE ⇒ findings + remediation for unsatisfied obligations with known state (cited /
+Planner: INCOMPLETE ⇒ findings + remediation for treatment violations (0018: not for a missing kept record) (cited /
 empty), verification for **every** obligation with `evidence_id=""`. COMPLETE ⇒ verification only, each
 citing its `proof`.
 
 ### 3.5 Completion blockers and diagnostics
 
 A case is COMPLETE only if no blocker fires, there is ≥1 obligation, and every obligation is satisfied with
-proof. Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted by the scorer report):
+proof. `BLOCKER_FLAGS` is declared once in `models.py` (planner and validator share it). Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted by the scorer report):
 
 | Flag | When | Status | Steps |
 |---|---|---|---|
@@ -203,6 +215,7 @@ proof. Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted
 | `UNKNOWN_STATE` | no eligible file / coverage / state-check activity establishes the state | INCOMPLETE (blocker) | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
 | `POLICY_UNDEFINED` | a rule condition evaluates FALSE (the rules define no action for that branch) | INCOMPLETE (blocker) | no step for that resource; flagged for review — code does not invent an action |
 | `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE (blocker) | `[]` |
+| `REQUIRED_RECORD_MISSING` | 0018: a record the policy keeps is absent in every established copy, or a tombstone lost the subject's stable user_id | INCOMPLETE (blocker) | no finding / remediation for it (no operation can recreate it); VERIFICATION step (required end state) with `""` |
 | `CONDITION_DEFAULTED` | rule condition has no field (UNKNOWN) | not a blocker | default (rule's stated) branch |
 | `ACTIVITY_CITATION` | proof is a state-check activity_id / audit_id | not a blocker | cited as is |
 | `IDENTITY_SNAPSHOT_AFTER_CUTOFF` | subject's identity snapshot updated_at > audit_at | not a blocker | snapshot values are **excluded** (unavailable at the cutoff); identifiers come only from pre-cutoff audit rows and user_id; a request email not found there leaves the subject as that email + hash; flagged (0/550 occurrences) |
@@ -450,3 +463,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | [overnight] Grounded linkage stays 12/32 on samples (167/518 overall): the 20 ungrounded sample accounts and 7 anonymized analytics records have no eligible grounded link; recall target 85% not attainable under grounding | spec 0010 inspection; contract over score |
 | 2026-10-25 | [overnight] No separate `cite.py`: the obligation proof from `timeline.state_at` (observed → omission → state-check activity) is the citation; generic snapshots cover only collections present in the same file | spec 0012: one rule, one implementation; tombstone_17 omission came from a collection the snapshot never held |
 | 2026-10-25 | **0017** State per storage copy, then combined (violation wins, cited from the violating copy); only SQL table names identify copies, format labels mean the system of record; observation time (snapshot / read / record time) orders states within a copy, captured_at only gates eligibility; bundle omissions count only for the subjects the bundle was exported for; superseded `_latest`/`required_copy` path deleted | Review finding 1: primary-only 404 / clean primary hid a replica; `evidence_51` omits a record read 23 s earlier and lists only 2 subjects; full-dataset impact 3 obligations (0 COMPLETE → INCOMPLETE) |
+| 2026-10-25 | **0018** Preservation is a separate predicate derived from the rule action (REDACT / ANONYMIZE / RETAIN keep the record; DELETE and data flows do not); absence satisfies only the treatment of a copy, never preservation; `REQUIRED_RECORD_MISSING` blocker; tombstones must keep the subject's user_id; findings only for treatment violations; shared `BLOCKER_FLAGS` | Review finding 2: missing tombstone/backup accepted as COMPLETE; AGENTS.md §6.5; no saved row affected (0 full-dataset changes) |

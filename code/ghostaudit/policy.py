@@ -15,6 +15,8 @@ Condition = Literal["TRUE", "FALSE", "UNKNOWN"]
 ACTION_REQUIRED: dict[str, RequiredState] = {"DELETE": "ABSENT", "REDACT": "REDACTED", "ANONYMIZE": "ANONYMIZED",
                                              "RETAIN": "PRESENT"}
 RETENTION_FIELDS = {"SECURITY_AUDIT_LOG": ("retention_until",), "LEGAL_HOLD_RECORD": ("retained_until",)}
+# REDACT / ANONYMIZE / RETAIN keep the record (AGENTS.md §6.4: "keep the record ..."); only DELETE removes it.
+RECORD_PRESERVING_ACTIONS = frozenset({"REDACT", "ANONYMIZE", "RETAIN"})
 
 
 def required_state(category: str, rule: Rule | None) -> RequiredState | None:
@@ -25,6 +27,11 @@ def required_state(category: str, rule: Rule | None) -> RequiredState | None:
     if category == "BACKUP_ARCHIVE" and rule.required_action == "RETAIN":
         return "BLOCKED"                     # retained, with restore access blocked
     return ACTION_REQUIRED[rule.required_action]
+
+
+def preservation_required(category: str, rule: Rule | None) -> bool:
+    """A data flow is a process, not retained business data: its absence satisfies DISABLED."""
+    return category != DATA_FLOW and rule is not None and rule.required_action in RECORD_PRESERVING_ACTIONS
 
 
 def _latest_value(observations: list[Observation], field_names: tuple[str, ...]) -> str | None:

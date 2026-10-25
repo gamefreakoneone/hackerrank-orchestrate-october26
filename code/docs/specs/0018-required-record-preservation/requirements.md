@@ -1,6 +1,6 @@
 # Spec 0018 — Required record preservation: requirements
 
-**Status:** Not started. **Depends on:** 0017.
+**Status:** Completed. **Depends on:** 0017.
 Read implementation-review finding 2 and the supplied record-treatment operations.
 
 ## Goal

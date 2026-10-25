@@ -14,7 +14,7 @@ from ghostaudit.models import Request
 from ghostaudit.models import Status, Step
 from ghostaudit.obligations import PolicyOutcome, build_obligation
 from ghostaudit.planner import plan
-from ghostaudit.policy import category_fallback, condition, required_state
+from ghostaudit.policy import category_fallback, condition, preservation_required, required_state
 from ghostaudit.timeline import delete_claim_times, last_delete_before, resource_category, state_at
 
 
@@ -53,6 +53,8 @@ class Assessment:
         obligations = self.policy.obligations
         if any(o.current == "UNKNOWN" for o in obligations):
             flags.add("UNKNOWN_STATE")
+        if any(o.required_record_is_preserved is False for o in obligations):
+            flags.add("REQUIRED_RECORD_MISSING")
         if self.policy.policy_undefined:
             flags.add("POLICY_UNDEFINED")
         if self.policy.condition_defaulted:
@@ -105,7 +107,8 @@ def assess(request: Request, ctx: Context) -> Assessment:
                          last_delete_before(ctx.deletes, resource_id, audit_at), subject.user_id)
         outcome.obligations.append(build_obligation(system_id=system_id, resource_id=resource_id, category=category,
                                                     required=required, condition=rule_condition, state=state,
-                                                    subject=subject))
+                                                    subject=subject,
+                                                    preservation_required=preservation_required(category, rule)))
     return Assessment(request, subject, discovered, link, outcome, categories, sources, guessed_account)
 
 

@@ -22,7 +22,7 @@ spec whose dependencies are not `Completed`.
 | 0015 | [full-run-ablations-reports](specs/0015-full-run-ablations-reports/) | Completed | 0014 | Final cold-cache full run, ablations, and the two required evaluation reports. |
 | 0016 | [packaging-and-interview](specs/0016-packaging-and-interview/) | Completed | 0015 | Submission artifacts and interview preparation. |
 | 0017 | [replica-state-and-proof](specs/0017-replica-state-and-proof/) | Completed | 0010, 0012, 0016 | Per-copy state and treatment evidence; prevent a primary-only result from clearing another replica. |
-| 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Not started | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
+| 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Completed | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
 | 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Not started | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
 | 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Not started | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
 | 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Not started | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
@@ -33,7 +33,7 @@ The overnight implementation is the historical baseline at `2a722566e1367f409a5b
 originally pushed on `claude/nifty-tesla-4ig5f5` and fast-forwarded into `claude/eager-cray-7fhtkf` for this pass.
 Follow `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`. Work branch (cloud session's designated
 push branch): `claude/specs-0017-0021-5s3kpe`, started from `origin/claude/eager-cray-7fhtkf` @ `bf79d4a`.
-**0017 Completed; next: 0018.**
+**0017–0018 Completed; next: 0019.**
 
 The original 0001–0016 statuses record the overnight milestones, not a claim that all current correctness or
 acceptance gaps are closed. In particular, 0010 reported Completed with recall **77/111 versus the ≥85% target**;
@@ -48,7 +48,8 @@ commit (a commit cannot contain its own SHA).
 
 | Spec | Commit | Remote branch | Verified |
 |---|---|---|---|
-| 0017 | `spec 0017: correct replica state and proof aggregation` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
+| 0017 | `4f2a05a` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `4f2a05a3a930` |
+| 0018 | `spec 0018: enforce required record preservation` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
 
 ## Planning history
 
