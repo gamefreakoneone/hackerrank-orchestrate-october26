@@ -1,5 +1,10 @@
 # SUBMISSION_CHECKLIST
 
+> **Corrective work pending:** The rows below describe the preserved overnight artifacts, not a completed
+> corrective release. Specs 0017–0021 and `CORRECTIVE_HANDOFF.md` now govern the next pass. Keep the historical
+> files until 0021 validates a matching replacement bundle. The review records the missing diagnostics argument
+> in the validator command below; spec 0020 owns the corrected reproducible instructions.
+
 Source of the requirements: `AGENTS.md` §6.3, §6.7–6.9, `problem_statement.md` (Evaluation, Submission,
 Token Usage), `agent_trace_instructions.md`. Official challenge / submission page:
 https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists

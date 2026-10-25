@@ -4,6 +4,26 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
+## Post-implementation correction pass — planned, not implemented
+
+Baseline: `2a722566e1367f409a5b3789ce61c1c19c566cfc`. The implementation review is
+`reviews/0001-implementation-review.md`; execution instructions are in `CORRECTIVE_HANDOFF.md`.
+The following are approved **prospective contract changes**, owned by specs 0017–0021. The runtime at the
+baseline does not yet satisfy them. Update the relevant Key Contracts and mark the change implemented only in
+the owning spec's implementation commit, preserving the original decision history below.
+
+| Owner | Planned correction | Completion evidence |
+|---|---|---|
+| 0017 | Reconstruct state/treatment per identified physical copy, then combine the required copy scopes. Evidence formats are not automatically copy identities. A primary-only absence or clean record cannot clear an uncleared replica. | Cross-copy counterexamples fail on the baseline and pass after correction; same-copy later observations can supersede older state. |
+| 0018 | Required record presence and required identifier/restore treatment are separate predicates. Absence cannot satisfy a policy that requires the record to remain. | Missing tombstone/retained-backup regressions; compliant retained records pass; unsupported restoration actions are never invented. |
+| 0019 | Improve only supported identifier/reference discovery; record unresolved causes and provenance separately from precision/coverage. | Comparable before/after measurements or a justified investigation-only outcome. |
+| 0020 | Derive claims from preserved, revision-labelled evaluation artifacts; distinguish oracle-assisted diagnostics from end-to-end measurements. | Reports rebuild without model calls or an unrecorded `runs/` dependency; missing/mismatched required inputs fail explicitly. |
+| 0021 | Validate candidates before replacing selected outputs and publish matching output, diagnostics, manifest, reports and usage ledger. | Failure leaves the previous selected output intact; release bundle and rebuilt archive validate together. |
+
+Keep the three output statuses and seven Step fields unchanged. Any added copy-state, preservation-proof or
+missing-retained-record information is internal/diagnostic, with every consumer and validator updated in the
+owning spec. Preserve strict cutoffs, grounded-only normal output and the public-sample regression distinction.
+
 ## 1. Principle
 
 **Code decides, models read.** A deterministic Python engine owns identity resolution, evidence

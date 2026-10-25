@@ -1,5 +1,11 @@
 # MORNING_REPORT — overnight run
 
+> **Post-run audit / corrective handoff:** The implementation at `2a72256` has now been fast-forwarded into
+> `claude/eager-cray-7fhtkf`. The report below remains the historical overnight result. The independent review
+> found correctness/reproducibility gaps; approved specs **0017–0021 are Not started**. Read
+> `CORRECTIVE_HANDOFF.md`, `FEATURE_STATUS.md`, and `reviews/0001-implementation-review.md` for the current work.
+> The saved output is unchanged; no corrected release or improved score is claimed by this documentation update.
+
 Run: unattended, Claude Code session `ec35ed67-5cb9-5bde-94dc-96a460a90186` (cloud session
 `session_01W4Ze6mbVNu5rNRyb4mLfBz`), model `claude-opus-5-5`, 2026-10-25 07:51Z → ~09:30Z.
 Branch: the session's designated push branch `claude/nifty-tesla-4ig5f5`, fast-forwarded to

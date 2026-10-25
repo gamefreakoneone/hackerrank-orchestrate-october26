@@ -1,7 +1,8 @@
 # OpenCode session trace
 
 `ses_e8e55c36effeT6sGe7MMG9kJrC.json` is a structured export of the challenge session containing
-the Phase 0 reviews, review publication, overnight-brief review, and authorized brief corrections.
+the Phase 0 reviews, review publication, overnight-brief review and corrections, the implementation audit,
+and the corrective-spec planning/documentation handoff.
 The runtime identifies the harness as **OpenCode** and model as **azure/gpt-6-astra**.
 
 The file is a pre-commit checkpoint. Its `exportNote.exportedAt` records the actual export time;

@@ -21,6 +21,23 @@ spec whose dependencies are not `Completed`.
 | 0014 | [custom-eval-and-metamorphic](specs/0014-custom-eval-and-metamorphic/) | Completed | 0012, 0013 | Team-created evaluation cases and metamorphic tests (problem statement requires ≥3 custom cases). |
 | 0015 | [full-run-ablations-reports](specs/0015-full-run-ablations-reports/) | Completed | 0014 | Final cold-cache full run, ablations, and the two required evaluation reports. |
 | 0016 | [packaging-and-interview](specs/0016-packaging-and-interview/) | Completed | 0015 | Submission artifacts and interview preparation. |
+| 0017 | [replica-state-and-proof](specs/0017-replica-state-and-proof/) | Not started | 0010, 0012, 0016 | Per-copy state and treatment evidence; prevent a primary-only result from clearing another replica. |
+| 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Not started | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
+| 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Not started | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
+| 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Not started | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
+| 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Not started | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
+
+## Current correction pass
+
+The overnight implementation is the historical baseline at `2a722566e1367f409a5b3789ce61c1c19c566cfc`,
+originally pushed on `claude/nifty-tesla-4ig5f5` and fast-forwarded into `claude/eager-cray-7fhtkf` for this pass.
+Start with **0017**, following `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`.
+
+The original 0001–0016 statuses record the overnight milestones, not a claim that all current correctness or
+acceptance gaps are closed. In particular, 0010 reported Completed with recall **77/111 versus the ≥85% target**;
+that target remains an explicitly unmet historical acceptance criterion. Specs 0017–0021 are not implemented.
+Preserve historical measurements; report new measurements with their own code revision/configuration. Do not
+mark a corrective spec Completed when a mandatory check fails or turn a coverage limitation into a guessed link.
 
 ## Planning history
 
@@ -42,7 +59,8 @@ spec whose dependencies are not `Completed`.
 - **In progress** — work begun on the branch; `status.md` lists what remains.
 - **Blocked** — cannot proceed; `status.md` names the blocker and what is needed.
 - **Completed** — every task checked, validation commands run, evidence (test counts, scorer numbers)
-  pasted into `status.md`, committed as `spec NNNN: <summary>`.
+  pasted into `status.md`, committed as `spec NNNN: <summary>`. Push and verify that commit before proceeding;
+  record a publication blocker if it is not yet on the remote. Historical exceptions are called out above.
 
 ## Update rule
 

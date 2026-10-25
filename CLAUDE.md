@@ -17,6 +17,8 @@ This file adds OUR development workflow on top of AGENTS.md.
 2. Read `code/docs/FEATURE_STATUS.md` to see what is done and what is next.
 3. If no spec folders exist yet, read `code/docs/HANDOFF.md` and run its Phase 0.
 4. Otherwise work on exactly the spec the user names (or the next `Not started` one).
+5. For the post-implementation correction pass, read `code/docs/CORRECTIVE_HANDOFF.md` and the implementation
+   review it links. Specs 0017–0021 supersede the old overnight kickoff for this pass.
 
 ## Spec-driven workflow
 
@@ -30,6 +32,13 @@ This file adds OUR development workflow on top of AGENTS.md.
 - Every spec from 0005 onward must record the scorer snapshot (status accuracy, step F1,
   sequence exact-match) on the dev split in `status.md`, before and after the change.
 - Commit each completed spec separately: `spec NNNN: <summary>`. Dated commits are evidence.
+- **Push after every completed spec, before starting the next one.** Verify that the remote branch contains the
+  commit. Record the actual branch and SHA in the next report/status update; do not put an invented self-SHA in a
+  commit. A failed push is a publication blocker: keep the local commit, report the failure, and reconcile safely
+  before continuing. Never force-push or describe local-only work as remotely saved.
+- Failed mandatory checks mean `Blocked`, not `Completed`. Distinguish implementation/test completion from
+  publication status. Investigate regressions; retain contract-required correctness fixes with an explanation
+  even when sample metrics fall. Never modify supplied sample answers to make a test pass.
 - Export and verify the **actual harness's** session trace immediately before every commit; include relevant
   `agent-trace/` changes and `log.txt`. For Claude Code, pipe actual session metadata
   `{"session_id":…,"transcript_path":…}` into `scripts/save_trace.sh` (also wired as the SessionEnd hook).
@@ -42,6 +51,20 @@ This file adds OUR development workflow on top of AGENTS.md.
   packaged separately as `agent-trace.zip` (see `agent_trace_instructions.md`).
 - Keep `code/README.md` current whenever setup, commands, or env vars change.
 - Preserve the Key Contracts in `code/docs/TECHNICAL_DESIGN.md` unless a spec explicitly changes them.
+
+## Implementation principles (user requirements)
+
+- **YAGNI:** implement only a demonstrated defect, acceptance requirement, or evidence-backed improvement.
+- **DRY:** extract shared behavior after the second real duplication, not before. Prefer existing helpers over a
+  new framework; do not confuse similar-looking policy rules with identical semantics.
+- **Fail fast:** malformed inputs, unavailable required artifacts, and programming failures must produce explicit
+  errors. Insufficient audit evidence is a domain outcome with an explicit blocker, not fabricated compliance.
+- **Simple first:** use straightforward functions, dictionaries and comparisons; optimize only a measured need.
+- **Delete aggressively:** remove superseded branches/helpers after their replacements are verified. Preserve
+  participant data, historical results and append-only logs; avoid unrelated cleanup or deleting user work.
+- **Semantic naming:** new/touched identifiers must describe meaning, e.g. `latest_observation_by_physical_copy`,
+  `required_retained_record_is_present`, `candidate_output_path`. Avoid terse names and repository-wide cosmetic
+  renames unrelated to the current spec. Do not add APIs, dependencies or abstraction layers without a need.
 
 ## Hard rules (never break)
 
