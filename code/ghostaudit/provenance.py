@@ -1,5 +1,5 @@
 """Run provenance shared by the pipeline, the evaluation capture and the release finalizer: code revision,
-uncommitted producing code and artifact hashes. No model or provider imports."""
+uncommitted producing code, artifact hashes and the release configuration. No model or provider imports."""
 from __future__ import annotations
 
 import hashlib
@@ -31,3 +31,20 @@ def uncommitted_producing_code() -> list[str]:
                               capture_output=True, text=True, check=True).stdout.splitlines()
     except (OSError, subprocess.CalledProcessError):
         return ["(git unavailable)"]
+
+
+def release_configuration_violations(run_args: dict) -> list[str]:
+    """Why a run's arguments are not the release configuration (all requests, default inference); [] = release.
+    --no-cache is a cache policy, not an ablation. Shared by main.py's selected-output guard and finalize_run."""
+    violations = []
+    if run_args.get("cases") != "all":
+        violations.append(f"--cases {run_args.get('cases')}")
+    if run_args.get("case") is not None:
+        violations.append(f"--case selector {run_args['case']}")
+    if run_args.get("ablate"):
+        violations.append(f"--ablate {' '.join(run_args['ablate'])}")
+    if run_args.get("ungrounded_account_steps") != "none":
+        violations.append(f"--ungrounded-account-steps {run_args.get('ungrounded_account_steps')}")
+    if run_args.get("offline"):
+        violations.append("--offline")
+    return violations

@@ -19,6 +19,7 @@ from pathlib import Path
 CODE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = CODE_DIR.parent
 SELECTED_OUTPUT = REPO_ROOT / "output.csv"
+CANONICAL_DATA_ROOT = REPO_ROOT / "dataset"
 sys.path.insert(0, str(CODE_DIR))
 
 from ghostaudit.evidence.index import build_ledger, trusted_claim_observations  # noqa: E402
@@ -27,7 +28,8 @@ from ghostaudit.llm.ledger import summarize  # noqa: E402
 from ghostaudit.llm.providers import LLMLayer  # noqa: E402
 from ghostaudit.loaders import load_dataset  # noqa: E402
 from ghostaudit.pipeline import Context, run_case  # noqa: E402
-from ghostaudit.provenance import git_revision, sha256_of, uncommitted_producing_code  # noqa: E402
+from ghostaudit.provenance import (git_revision, release_configuration_violations, sha256_of,  # noqa: E402
+                                   uncommitted_producing_code)
 from ghostaudit.serialize import write_output  # noqa: E402
 from ghostaudit.validate import report, validate_output  # noqa: E402
 
@@ -50,10 +52,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def refuse_non_release_run_targeting_selected_output(args: argparse.Namespace) -> None:
+    """Before any data, provider or file work: only the release configuration over the canonical dataset may write
+    the selected output.csv. Every other mode stays available with --out elsewhere (spec 0025)."""
+    if args.out.resolve() != SELECTED_OUTPUT.resolve():
+        return
+    violations = release_configuration_violations(vars(args))
+    if args.data_root.resolve() != CANONICAL_DATA_ROOT.resolve():
+        violations.append(f"--data-root {args.data_root}")
+    if violations:
+        raise SystemExit(f"refusing to replace the selected {SELECTED_OUTPUT}: not the release configuration "
+                         f"({'; '.join(violations)}); pass --out to another path")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    if args.case and args.out.resolve() == SELECTED_OUTPUT:
-        raise SystemExit("a --case subset cannot replace the selected output.csv; pass --out to another path")
+    refuse_non_release_run_targeting_selected_output(args)
     run_id = f"{args.out.stem}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     runs_dir = REPO_ROOT / "runs"
     usage_path = runs_dir / f"usage_{run_id}.jsonl"

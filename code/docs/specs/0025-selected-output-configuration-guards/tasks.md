@@ -1,15 +1,15 @@
 # Spec 0025 — Selected-output configuration guards: tasks
 
-- [ ] Verify 0024 is completed/pushed; read this spec and review M3.
-- [ ] Capture before/dev metrics; reproduce unsafe selected-path modes in an isolated test fixture.
-- [ ] Implement early selected-output configuration validation and finalizer mode refusals.
-- [ ] Add negative/positive path-alias, sample, selector, custom-root, offline and ablation tests; preserve provenance.
-- [ ] Update README safe commands, Key Contracts and decision log.
-- [ ] Run focused checks, comparable after/dev scoring, then the full offline suite once code settles.
-- [ ] Rebuild the preserved reports into scratch space and inspect a fresh archive without promoting new predictions.
-- [ ] Record implementation results and separate release-regeneration status; ask before any live run.
-- [ ] Update status/tasks/FEATURE_STATUS/MORNING_REPORT; append log and export/verify the trace.
-- [ ] Commit `spec 0025: guard selected output from non-release runs`, push and verify remote publication.
+- [x] Verify 0024 is completed/pushed; read this spec and review M3.
+- [x] Capture before/dev metrics; reproduce unsafe selected-path modes in an isolated test fixture.
+- [x] Implement early selected-output configuration validation and finalizer mode refusals.
+- [x] Add negative/positive path-alias, sample, selector, custom-root, offline and ablation tests; preserve provenance.
+- [x] Update README safe commands, Key Contracts and decision log.
+- [x] Run focused checks, comparable after/dev scoring, then the full offline suite once code settles.
+- [x] Rebuild the preserved reports into scratch space and inspect a fresh archive without promoting new predictions.
+- [x] Record implementation results and separate release-regeneration status; ask before any live run.
+- [x] Update status/tasks/FEATURE_STATUS/MORNING_REPORT; append log and export/verify the trace.
+- [x] Commit `spec 0025: guard selected output from non-release runs`, push and verify remote publication.
 
 ## Validation commands
 

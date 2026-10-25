@@ -1,22 +1,23 @@
 # MORNING_REPORT — overnight run and corrective pass
 
-## Current next action — specs 0022–0025 (0022–0024 done; 0025 next)
+## Current next action — specs 0022–0025 (0022–0025 done; release regeneration pending)
 
 The targeted review of `88a357e` confirmed **1 blocker / 3 major defects**: future-dated account observations affect
 case_135 and case_383; unknown per-copy flow/restore treatment is dropped; report loading omits final diagnostics/
 ledger hash checks; selected-output guards permit sample/ablation modes. Full audit/sign-off remains incomplete.
 
 Read [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
-[review 0002](reviews/0002-corrective-pass-review.md). **Work/push on `claude/specs-0017-0021-5s3kpe`; start 0022.**
-0022–0024 are Completed; 0025 is Not started. The preserved output is **NO-GO** despite passing structural checks. Its saved
+[review 0002](reviews/0002-corrective-pass-review.md). **Work/push on `claude/specs-0017-0021-5s3kpe`.**
+0022–0025 are Completed in code; the release is not regenerated. The preserved output is **NO-GO** despite passing structural checks. Its saved
 hashes, sample scores and report rendering were independently reproduced in memory; pytest/CLI clean-room results
-were not rerun. Fix code first, preserve historical artifacts and ask before any live provider/release run.
+were not rerun by the review; this pass ran the full offline suite (197 passed / 2 skipped). Ask before any release regeneration.
 
 | Spec | Status | Measured result (offline/no-cache sample dev split, same configuration before/after) |
 |---|---|---|
 | 0022 observation-time cutoffs | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (sample outputs byte-identical); 7/8 new regressions failed on the baseline, all pass; full offline run changes exactly case_135, case_383 INCOMPLETE → COMPLETE; saved release untouched |
 | 0023 unknown copy treatment | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (byte-identical); 7/7 new regressions failed on the 0022 baseline, all pass; full offline run 0 changed rows, 0/203 flow/backup obligations with an unknown copy; live vision configuration not measured |
 | 0024 final artifact hash verification | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (no prediction code changed); 8 report CLI tests failed on the baseline, all pass; preserved reports rebuild byte-identically in runs/corrective/0024_rebuilt |
+| 0025 selected-output configuration guards | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (no prediction code changed); 15 publication tests failed on the baseline, all pass; full suite 197 passed / 2 skipped; reports rebuild byte-identically; code.zip builds (291 files) with historical reports |
 
 ## Historical corrective pass (specs 0017–0021)
 

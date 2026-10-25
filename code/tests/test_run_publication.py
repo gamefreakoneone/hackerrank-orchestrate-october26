@@ -63,11 +63,60 @@ def test_valid_candidate_replaces_the_output(tmp_path):
     assert manifest["validation"]["errors"] == 0 and not list(tmp_path.glob("*.staged"))
 
 
-def test_subset_run_cannot_replace_the_selected_output():
-    before = sha256_of(REPO_ROOT / "output.csv")
-    with pytest.raises(SystemExit, match="cannot replace the selected output"):
-        main.main(["--case", "case_01", "--offline"])
-    assert sha256_of(REPO_ROOT / "output.csv") == before
+@pytest.fixture
+def isolated_selected_output(tmp_path, monkeypatch):
+    """main.py's selected output (with diagnostics and manifest) relocated to a fixture; no inference may start."""
+    selected = tmp_path / "repo" / "output.csv"
+    selected.parent.mkdir()
+    selected.write_bytes(SELECTED_BYTES)
+    selected.with_suffix(".diagnostics.jsonl").write_text("previous diagnostics\n")
+    monkeypatch.setattr(main, "SELECTED_OUTPUT", selected)
+
+    def inference_must_not_start(*args, **kwargs):
+        raise AssertionError("inference started for a refused selected-output run")
+    monkeypatch.setattr(main, "load_dataset", inference_must_not_start)
+    monkeypatch.setattr(main, "LLMLayer", inference_must_not_start)
+    return selected
+
+
+@pytest.mark.parametrize("arguments,reason", [
+    (["--cases", "sample"], "--cases sample"),
+    (["--case", "case_01"], "--case selector ['case_01']"),
+    (["--case"], "--case selector []"),
+    (["--ablate", "trust-claims"], "--ablate trust-claims"),
+    (["--ablate", "no-history"], "--ablate no-history"),
+    (["--ungrounded-account-steps", "ranked"], "--ungrounded-account-steps ranked"),
+    (["--offline"], "--offline"),
+    (["--data-root", "elsewhere/dataset"], "--data-root elsewhere/dataset"),
+])
+def test_non_release_run_cannot_target_the_selected_output(isolated_selected_output, monkeypatch, arguments, reason):
+    selected = isolated_selected_output
+    monkeypatch.chdir(selected.parent)
+    for out in (str(selected), "output.csv", f"../{selected.parent.name}/output.csv"):   # resolved aliases
+        with pytest.raises(SystemExit, match="refusing to replace the selected") as refusal:
+            main.main(["--out", out, *arguments])
+        assert reason in str(refusal.value) and "pass --out to another path" in str(refusal.value)
+    assert selected.read_bytes() == SELECTED_BYTES
+    assert sorted(p.name for p in selected.parent.iterdir()) == ["output.csv", "output.diagnostics.jsonl"]
+    assert selected.with_suffix(".diagnostics.jsonl").read_text() == "previous diagnostics\n"
+
+
+def test_release_run_publishes_to_the_selected_output(tmp_path, monkeypatch):
+    """Default configuration over the canonical (fixture: sample-sized) dataset; only the provider boundary is
+    replaced by the offline cache-only layer, so no model is called. The fixture manifest is test-only."""
+    dataset_root = tmp_path / "dataset"
+    shutil.copytree(REPO_ROOT / "dataset", dataset_root)
+    shutil.copyfile(dataset_root / "sample_deletion_requests.csv", dataset_root / "deletion_requests.csv")
+    selected = tmp_path / "output.csv"
+    selected.write_bytes(SELECTED_BYTES)
+    monkeypatch.setattr(main, "SELECTED_OUTPUT", selected)
+    monkeypatch.setattr(main, "CANONICAL_DATA_ROOT", dataset_root)
+    real_layer = main.LLMLayer
+    monkeypatch.setattr(main, "LLMLayer", lambda **kwargs: real_layer(**{**kwargs, "offline": True}))
+    assert main.main(["--out", str(selected), "--data-root", str(dataset_root), "--no-cache",
+                      "--run-manifest-output", str(tmp_path / "release.manifest.json")]) == 0
+    manifest = json.loads((tmp_path / "release.manifest.json").read_text())
+    assert manifest["published"] and manifest["rows"] == 32 and manifest["output_sha256"] == sha256_of(selected)
 
 
 @pytest.fixture
@@ -132,6 +181,18 @@ def as_subset(candidate, root):
     candidate["args"]["case"] = ["case_01"]
 
 
+def as_empty_selector(candidate, root):
+    candidate["args"]["case"] = []
+
+
+def as_sample(candidate, root):
+    candidate["args"]["cases"] = "sample"
+
+
+def as_ranked_accounts(candidate, root):
+    candidate["args"]["ungrounded_account_steps"] = "ranked"
+
+
 def as_ablation(candidate, root):
     candidate["args"]["ablate"] = ["trust-claims"]
 
@@ -158,8 +219,10 @@ def as_missing_diagnostics(candidate, root):
 
 
 @pytest.mark.parametrize("defect,message", [
-    (as_subset, "is a --case subset"), (as_ablation, "not the default configuration"),
-    (as_offline, "not the default configuration"), (as_wrong_code, "capture the evaluation inputs from the same"),
+    (as_subset, r"not the release configuration: --case selector \['case_01'\]"),
+    (as_empty_selector, r"--case selector \[\]"), (as_sample, "--cases sample"),
+    (as_ranked_accounts, "--ungrounded-account-steps ranked"), (as_ablation, "--ablate trust-claims"),
+    (as_offline, "not the release configuration: --offline"), (as_wrong_code, "capture the evaluation inputs from the same"),
     (as_uncommitted_code, "ran uncommitted producing code"), (as_altered_output, "does not match its recorded sha256"),
     (as_missing_diagnostics, "candidate diagnostics is missing"),
 ])

@@ -26,6 +26,7 @@ import make_reports  # noqa: E402
 import score  # noqa: E402
 from ghostaudit.llm.ledger import load_rows  # noqa: E402
 from ghostaudit.loaders import Dataset, load_dataset  # noqa: E402
+from ghostaudit.provenance import release_configuration_violations  # noqa: E402
 from ghostaudit.validate import validate_output  # noqa: E402
 
 FINAL_RUN_DIRECTORY = "code/evaluation/final_run"
@@ -38,11 +39,9 @@ def fail(message: str) -> None:
 
 def checked_candidate_files(candidate: dict, dataset: Dataset, repository_root: Path) -> dict[str, Path]:
     """The candidate must be the published default configuration of committed code, intact and valid."""
-    args = candidate["args"]
-    if args.get("case"):
-        fail(f"candidate {candidate['run_id']} is a --case subset, not a full run")
-    if args.get("ablate") or args.get("ungrounded_account_steps") != "none" or args.get("offline"):
-        fail(f"candidate {candidate['run_id']} is not the default configuration: {args}")
+    violations = release_configuration_violations(candidate["args"])
+    if violations:
+        fail(f"candidate {candidate['run_id']} is not the release configuration: {'; '.join(violations)}")
     if candidate.get("uncommitted_producing_code") != []:
         fail(f"candidate {candidate['run_id']} ran uncommitted producing code: {candidate.get('uncommitted_producing_code')}")
     if not candidate.get("published"):

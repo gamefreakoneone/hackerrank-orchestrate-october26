@@ -4,21 +4,20 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Next correction pass — 0022–0024 implemented; 0025 planned
+## Correction pass 0022–0025 — implemented (release not regenerated)
 
 Targeted audit of `88a357e`: [reviews/0002-corrective-pass-review.md](reviews/0002-corrective-pass-review.md).
 Execution handoff: [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md).
-Continue on `claude/specs-0017-0021-5s3kpe`. The table below records planned changes; it does not silently update
-the implemented Key Contracts or assert that the runtime already satisfies them.
+Continue on `claude/specs-0017-0021-5s3kpe`. All four corrections are implemented; the owning Key Contracts (§2, §3.2–3.5,
+§3.7) and the decision log were updated in each spec's commit.
 
-| Owner | Planned contract correction | Required evidence |
+| Owner | Contract correction | Required evidence |
 |---|---|---|
 | 0022 (**implemented**) | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
 | 0023 (**implemented**) | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
 | 0024 (**implemented**) | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
-| 0025 | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
+| 0025 (**implemented**) | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
 
-Update the owning implemented Key Contracts and append a decision-log entry when each spec is actually implemented.
 The historical selected run remains at b90914b until authorized regeneration; the review does not approve that output.
 
 ## Post-implementation correction pass — implemented (specs 0017–0021)
@@ -291,7 +290,10 @@ python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [
 Default `--cases all --out <repo>/output.csv`. `--cases sample` reads
 `sample_deletion_requests.csv`. Exit code ≠ 0 if the validator fails. Since 0021 the output and diagnostics are
 staged, validated and only then moved over `--out` (a failure leaves the previous files); `--run-manifest-output PATH`
-names the run manifest; a `--case` subset cannot target the selected output. `code/tools/finalize_run.py` promotes a
+names the run manifest. Since 0025 an `--out` resolving to the selected output is refused before any data/provider work
+unless `provenance.release_configuration_violations(args)` is empty (`--cases all`, no `--case` selector — even an
+empty one —, no ablation, `--ungrounded-account-steps none`, not offline; `--no-cache` allowed) and `--data-root`
+resolves to the canonical `dataset/`. `code/tools/finalize_run.py` refuses candidates with the same predicate and promotes a
 validated default-configuration candidate together with same-revision evaluation inputs and both reports. `sample_output.csv` is read
 only by `code/evaluation/`, never by `ghostaudit/`.
 
@@ -506,3 +508,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0022** Eligibility needs availability *and* observation time ≤ audit_at (`index.eligible`, one rule for discovery, account linking, category/policy selection, per-copy state, coverage and citations); the `min(observed_at, captured_at)` clipping in `timeline.observation_time`/`coverage_time` deleted in favour of `index.state_observed_at`; bundle records dated after their snapshot name no covered subject; business dates (retention_until) stay fields; parser cache 0017.2 → 0022.1 | Review B1: a FOUND row dated two days after its file's capture overrode the at-cutoff NOT_FOUND (case_135, case_383); full offline run changes exactly those two rows INCOMPLETE → COMPLETE |
 | 2026-10-25 | **0023** DISABLED / BLOCKED take every copy with presence or treatment facts; a present copy lacking an enabled / restore_allowed fact is UNKNOWN (not dropped); violations still win and are reported; any UNKNOWN copy blocks COMPLETE (`UNKNOWN_STATE`); treatment-only copy selection and the all-absent special case deleted | Review M1: a compliant primary hid an unchecked failover replica (satisfied=True, COMPLETE). Offline full run: 203 flow/backup obligations, 0 unknown copies, 0 changed rows; live PNG/vision configuration not measured |
 | 2026-10-25 | **0024** `make_reports.load_final_run` verifies output, diagnostics and usage-ledger raw bytes against the manifest's declared SHA-256 (64 lowercase hex, required) through the one `verified_artifact` helper before parsing; `finalize_run` uses the same helper for candidate files and drops its duplicate post-publication hash loop; the report CLI renders both reports before writing either | Review M2: altered-but-parseable diagnostics flags and ledger tokens were accepted with stale hashes; preserved reports still rebuild byte-identically (9,218 / 2,560 bytes) |
+| 2026-10-25 | **0025** One release-configuration predicate (`provenance.release_configuration_violations`) for main.py's selected-output guard (checked first, on resolved paths, plus the CLI-only canonical data-root check) and `finalize_run`; sample runs and empty `--case` selectors are now refused by both | Review M3: `--cases sample`, `--ablate`, `--ungrounded-account-steps ranked` (all with `--offline`) could replace root output.csv; the finalizer accepted declared sample and empty-selector candidates |

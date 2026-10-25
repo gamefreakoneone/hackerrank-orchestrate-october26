@@ -1985,3 +1985,24 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T11:51:52Z] Spec 0025: guard selected output from non-release runs (same turn)
+
+User Prompt (verbatim, secrets redacted):
+(same user turn as the "Spec 0022: enforce observation-time cutoffs" entry above; prompt logged there verbatim)
+
+Agent Response Summary:
+Verified 0024 on the remote (259b142) and read all four 0025 files and review M3. Added one release-configuration predicate (provenance.release_configuration_violations) used by main.py's early selected-output guard (resolved paths, plus canonical data-root check) and by finalize_run, which now also refuses declared sample and empty-selector candidates. 15 publication tests failed on the baseline and pass in an isolated selected-path fixture; full suite 197 passed / 2 skipped; reports rebuild byte-identically; code.zip builds. Release regeneration remains pending; the real output.csv was never touched.
+
+Actions:
+* Edited code/main.py, code/ghostaudit/provenance.py, code/tools/finalize_run.py, code/tests/test_run_publication.py, code/README.md.
+* Ran publication/packaging tests, full pytest, offline dev scoring before/after, make_reports.py rebuild + cmp, make_zip.py to runs/corrective/0025_code.zip.
+* Updated spec 0025 status/tasks, FEATURE_STATUS.md, MORNING_REPORT.md, TECHNICAL_DESIGN.md.
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

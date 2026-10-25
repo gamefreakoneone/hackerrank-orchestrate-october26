@@ -44,7 +44,15 @@ All commands run from the repository root (the folder containing `dataset/`).
 ```bash
 python code/main.py                                  # all 518 requests -> ./output.csv
 python code/main.py --cases sample --out runs/sample.csv
+python code/main.py --cases sample --offline --no-cache --out runs/sample_offline.csv   # deterministic, no model calls
 ```
+
+Selected-output contract (spec 0025): only the release configuration may write the repository-root `output.csv`
+(any path resolving to it, e.g. `./output.csv` or `code/../output.csv`): `--cases all`, no `--case`, no `--ablate`,
+`--ungrounded-account-steps none`, not `--offline`, and `--data-root` resolving to `dataset/` (`--no-cache` is
+allowed). Anything else stops before loading data or calling a provider, e.g.
+`refusing to replace the selected .../output.csv: not the release configuration (--cases sample; --offline); pass
+--out to another path`. All those modes work with `--out` elsewhere (a scratch file named `output.csv` is fine).
 
 Flags: `--cases sample|all`, `--out PATH`, `--offline` (cache-only model calls; keyword intent marked provisional),
 `--no-cache` (skip cache reads: cold run), `--case case_NN ...` (subset, skips the full-file validator),
@@ -88,7 +96,7 @@ Without `--evaluation-inputs`, `make_reports.py` uses the path named by the fina
 
 `main.py` writes predictions and diagnostics to run-owned `.<name>.<run_id>.staged` files, validates them, and only then
 replaces `--out` and its diagnostics; a failed validation exits 1, leaves the previous files untouched and keeps the
-rejected candidate. A `--case` subset cannot target the selected `output.csv`. `--run-manifest-output PATH` names the
+rejected candidate. Non-release configurations cannot target the selected `output.csv` (see Run). `--run-manifest-output PATH` names the
 run manifest (revision, uncommitted producing code, SHA-256 of output/diagnostics/usage ledger, validation counts).
 
 ```bash
@@ -102,7 +110,8 @@ python code/evaluation/make_reports.py                       # 5. offline rebuil
 git add output.csv code/evaluation && python code/tools/make_zip.py   # 6. package the validated tree
 ```
 
-`finalize_run.py` refuses subset, ablation/offline, uncommitted-code, altered, incomplete or invalid candidates and
+`finalize_run.py` refuses any candidate whose declared arguments are not the release configuration (sample, any
+`--case` selector including an empty one, ablation, ranked accounts, offline), uncommitted-code, altered, incomplete or invalid candidates and
 evaluation inputs from another revision; it stages everything first, then replaces `code/evaluation/final_run/`, the
 two reports and `output.csv` (last) and re-checks them. The replacement is a sequence of renames, not atomic: an
 interruption reports the run id and the previous bundle's location (the last commit remains the recovery point).
