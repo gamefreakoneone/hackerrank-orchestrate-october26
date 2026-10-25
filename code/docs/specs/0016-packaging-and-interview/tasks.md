@@ -1,10 +1,10 @@
 # Spec 0016 — packaging-and-interview: tasks
 
-- [ ] make_zip.py
-- [ ] README final
-- [ ] INTERVIEW_NOTES.md
-- [ ] dry-run zip and inspect listing
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0016: <summary>`
+- [x] make_zip.py
+- [x] README final
+- [x] INTERVIEW_NOTES.md
+- [x] dry-run zip and inspect listing
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0016: <summary>`
 
 ## Validation commands
 

@@ -15,4 +15,6 @@ def test_sample_run_offline_writes_valid_sorted_output(tmp_path):
     assert {r["deletion_status"] for r in rows} <= {"COMPLETE", "INCOMPLETE", "NOT_APPLICABLE"}
     diagnostics = [json.loads(line) for line in output_path.with_suffix(".diagnostics.jsonl").read_text().splitlines()]
     assert [d["case_id"] for d in diagnostics] == [r["case_id"] for r in rows]
-    assert all("flags" in d and "account_link" in d for d in diagnostics)
+    assert all("flags" in d and "intent" in d for d in diagnostics)
+    # without cached model answers the provisional keyword gate may stop a request before the account stage
+    assert all("account_link" in d for d in diagnostics if d["status"] != "NOT_APPLICABLE")

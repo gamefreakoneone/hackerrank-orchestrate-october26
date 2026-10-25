@@ -26,8 +26,8 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0012 | Completed | `14df3a9` | dev status 0.750, F1 0.904 |
 | 0013 | Completed | `0623153` | 508 deletion / 10 non-deletion; 32/32 samples deletion |
 | 0014 | Completed | `d33daa7` (expected outputs, before running) + `06ce215` | 9/9 custom requests pass; 4 metamorphic tests |
-| 0015 | Completed | `375604e` (code freeze) + pending `spec 0015: cold-cache final run, ablations and reports` | final run 535 calls, est. $0.23 |
-| 0016 | Not started | — | |
+| 0015 | Completed | `375604e` (code freeze) + `6d08f84` | final run 535 calls, est. $0.23 |
+| 0016 | Completed | `ca11239` + pending `spec 0016: packaging, README and interview notes` | code.zip verified clean-room |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -73,10 +73,10 @@ Not yet "submission artifacts validated together" (code.zip is spec 0016). File 
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0016 (packaging, interview notes).
+- All specs done; overnight wrap-up next.
 - Prices are third-party estimates (no official page found); labelled as such in the usage report.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `375604e` (spec 0015 code freeze).
+Last published checkpoint: `ca11239` (spec 0016 part).
