@@ -30,10 +30,14 @@ This file adds OUR development workflow on top of AGENTS.md.
 - Every spec from 0005 onward must record the scorer snapshot (status accuracy, step F1,
   sequence exact-match) on the dev split in `status.md`, before and after the change.
 - Commit each completed spec separately: `spec NNNN: <summary>`. Dated commits are evidence.
-- Run `scripts/save_trace.sh` immediately before every commit and include `agent-trace/` and `log.txt` in
-  that commit. When the user says "wrap up", run the script, commit `trace: session wrap-up`, push, and
-  confirm the tree is clean. (Manual run: pipe `{"session_id":…,"transcript_path":…}` to the script; it is
-  also wired as the SessionEnd hook in `.claude/settings.json`.)
+- Export and verify the **actual harness's** session trace immediately before every commit; include relevant
+  `agent-trace/` changes and `log.txt`. For Claude Code, pipe actual session metadata
+  `{"session_id":…,"transcript_path":…}` into `scripts/save_trace.sh` (also wired as the SessionEnd hook).
+  Check that the intended JSONL file was refreshed and is parseable: the script always exits 0, even on a
+  no-op. For OpenCode or another harness, use its own exporter per `agent_trace_instructions.md`; the
+  Claude hook cannot export those sessions. Preserve useful structured trace content while redacting
+  secrets/private data. When the user says "wrap up", export/verify, commit `trace: session wrap-up`, push,
+  and report the actual tree/publication status. Record unavailable exports as blockers, not successes.
 - `agent-trace/` lives at the repo root, never inside `code/`, so it stays out of `code.zip`. At the end it is
   packaged separately as `agent-trace.zip` (see `agent_trace_instructions.md`).
 - Keep `code/README.md` current whenever setup, commands, or env vars change.
