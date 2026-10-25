@@ -101,10 +101,13 @@ def activity_observation(activity: Activity) -> Observation:
 
 def build_ledger(dataset: Dataset, use_cache: bool = True, extra: list[Observation] | None = None) -> Ledger:
     ledger = Ledger()
+    extra = list(extra or [])
+    png_with_records = {o.evidence_id for o in extra if o.source_kind == "png"}
     for file_id, evidence_file in sorted(dataset.evidence.items()):
         path = dataset.evidence_path(file_id)
         if path.suffix == ".png":
-            ledger.empty_files[file_id] = "png: handled by vision extraction (spec 0009)"
+            if file_id not in png_with_records:
+                ledger.empty_files[file_id] = "png: no vision records (not extracted, or no resource id on screen)"
             continue
         observations, coverage = cached_parse(file_id, evidence_file.captured_at, path, use_cache)
         if not observations and not coverage:
@@ -112,6 +115,6 @@ def build_ledger(dataset: Dataset, use_cache: bool = True, extra: list[Observati
         ledger.add(observations, coverage)
     ledger.add([activity_observation(a) for a in dataset.activity if a.event_type in STATE_CHECK_EVENT_TYPES
                 and a.reported_result == "SUCCESS"], [])
-    ledger.add(list(extra or []), [])
+    ledger.add(extra, [])
     ledger.build_indexes()
     return ledger

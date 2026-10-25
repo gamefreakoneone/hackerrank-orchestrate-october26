@@ -1,0 +1,44 @@
+{
+ "records": [
+  {
+   "record_type": "Archive",
+   "resource_id": "backup_9291",
+   "status_text": null,
+   "subject_identifiers": [
+    "bluepeakco@outlook.com"
+   ],
+   "system_hint": "Vault Recovery Manager",
+   "timestamp": "26 Apr 02:00"
+  },
+  {
+   "record_type": "Archive",
+   "resource_id": "backup_9288",
+   "status_text": null,
+   "subject_identifiers": [
+    "miller.logistics@company.com"
+   ],
+   "system_hint": "Vault Recovery Manager",
+   "timestamp": "26 Apr 02:00"
+  },
+  {
+   "record_type": "Archive",
+   "resource_id": "backup_9287",
+   "status_text": "Verified",
+   "subject_identifiers": [
+    "areed1433@gmail.com"
+   ],
+   "system_hint": "Vault Recovery Manager",
+   "timestamp": "26 Apr 2026 02:00 UTC"
+  },
+  {
+   "record_type": "Archive",
+   "resource_id": "backup_9286",
+   "status_text": null,
+   "subject_identifiers": [
+    "summit-retail@company.com"
+   ],
+   "system_hint": "Vault Recovery Manager",
+   "timestamp": "26 Apr 02:00"
+  }
+ ]
+}

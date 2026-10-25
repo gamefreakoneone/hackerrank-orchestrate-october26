@@ -1,0 +1,24 @@
+{
+ "records": [
+  {
+   "record_type": "connector",
+   "resource_id": "data_flow_1121",
+   "status_text": "Healthy",
+   "subject_identifiers": [
+    "jain.aditi@gmail.com"
+   ],
+   "system_hint": "BridgeOps",
+   "timestamp": "07:59:42"
+  },
+  {
+   "record_type": "connector",
+   "resource_id": "data_flow_9846",
+   "status_text": null,
+   "subject_identifiers": [
+    "lucia-torres@gmail.com"
+   ],
+   "system_hint": "BridgeOps",
+   "timestamp": "07:59:36"
+  }
+ ]
+}

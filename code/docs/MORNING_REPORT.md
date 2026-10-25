@@ -19,8 +19,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0005 | Completed | `4f192d3` | baseline recorded |
 | 0006 | Completed | `b22c8d9` | 518/518 resolved, 100 historical request emails |
 | 0007 | Completed | `2cb0e29` | 3012 observations, 472 coverage rows |
-| 0008 | Completed | pending `spec 0008: shared LLM layer with cache, repair retry and usage ledger` | live: jev, azure, gemini OK |
-| 0009–0016 | Not started | — | |
+| 0008 | Completed | `c188935` | live: jev, azure, gemini OK |
+| 0009 | Completed | pending `spec 0009: PNG vision extraction with revalidation` | 23 PNG records; 8 unreachable resources not in PNGs |
+| 0010–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -40,7 +41,7 @@ not committed). No audited output exists.
 |---|---|---|
 | Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | not wired yet |
 | Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK` = gpt-6-luna) | OK (needs `reasoning_effort=none` for function tools; temperature 0 accepted) | not wired yet |
-| Gemini via Strands (`GEMINI_VISION_MODEL` = gemini-3.8-flash) | OK (structured output, temperature 0) | not wired yet |
+| Gemini via Strands (`GEMINI_VISION_MODEL` = gemini-3.8-flash) | OK (structured output, temperature 0) | PNG extraction live (0009), 11 calls cached |
 
 ## Observed failure patterns
 
@@ -54,10 +55,10 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0009.
+- Continue with spec 0010 (grounded account linkage first).
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `2cb0e29` (spec 0007).
+Last published checkpoint: `c188935` (spec 0008).

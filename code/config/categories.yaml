@@ -123,3 +123,28 @@ boolean_fields: [enabled, restore_allowed, download_available, eligible, deletio
 
 # fields holding a person's name (exact-match identifiers; never matched by substring)
 name_fields: [full_name, display_name, requester_name, name, customer_name]
+
+# PNG screenshots: manifest origin -> [system the screen belongs to, category of that system's records].
+# A row whose resource prefix belongs to another system gets no category (spec 0011 fallback decides).
+png_origin_category:
+  account_admin_portal: [account_service, USER_PROFILE]
+  search_index_admin: [search_service, SEARCH_INDEX_ENTRY]
+  integration_admin: [integration_service, DATA_FLOW]
+  analytics_platform: [analytics_platform, ANALYTICS_PROFILE]
+  export_service: [export_service, USER_EXPORT]
+  support_platform: [support_platform, SUPPORT_MESSAGE]
+  backup_service: [backup_service, BACKUP_ARCHIVE]
+  security_service: [security_service, SECURITY_AUDIT_LOG]
+  identity_service: [identity_service, ACCOUNT_TOMBSTONE]
+  marketing_platform: [marketing_platform, MARKETING_PROFILE]
+
+# PNG status text (lower-case substring) -> normalized field value
+png_status_fields:
+  - {match: "restore allowed", field: restore_allowed, value: "true"}
+  - {match: "restorable", field: restore_allowed, value: "true"}
+  - {match: "restore blocked", field: restore_allowed, value: "false"}
+  - {match: "disabled", field: enabled, value: "false"}
+  - {match: "paused", field: enabled, value: "false"}
+  - {match: "stopped", field: enabled, value: "false"}
+  - {match: "enabled", field: enabled, value: "true"}
+  - {match: "healthy", field: enabled, value: "true"}

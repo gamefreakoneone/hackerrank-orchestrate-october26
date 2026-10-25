@@ -338,6 +338,9 @@ names and phones must not be embedded in a longer word/number.
   check `evidence_37` security_audit_explorer_20260905.png (eligible for all 7 audit-record cases; the visible
   table shows only user_03's audit_record_001–006) and `evidence_42` deleted_account_reference_20260310.png for
   account_004 (`evidence_04` account_admin_console_20260926.png is after case_04's cutoff).
+- **Spec 0009 PNG check (overnight run):** all 11 PNGs extracted (Gemini, cached, regex-revalidated). `evidence_37` shows only
+  user_03's audit_record_001–006; `evidence_42` shows user_17's order/support/finance references and no resource id. None
+  of the 8 resources appears in any PNG row, so the text+CSV+PNG reach stays **103/111** (89 text + 14 activity-only).
 
 ### Q4 — How is COMPLETE proven for flows and backups?
 
@@ -404,3 +407,5 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0d** Post-cutoff identity snapshot values excluded, not just flagged | Third review: flagging is not exclusion (0/550 affected) |
 | 2026-10-25 | **0d** `Observation.source_kind` includes `"activity"`; `file_id` → `evidence_id` | Third review: schema mismatch with spec 0010 |
 | 2026-10-25 | **Phase 0 closed.** Grounded accounts are the default; ranked accounts only in the 0015 ablation, labelled as guesses. 23/32 is a conditional upper bound on sample status under current linking, not a measured accuracy or dataset ceiling. Next focus: grounded discovery, not re-fitting inspected samples | Third review sign-off |
+| 2026-10-25 | [overnight] Evidence parsing: inventory coverage only for systems in `snapshot_scope`; generic-store coverage for every known collection even with 0 rows; free-text names are never identifiers | spec 0007; matches `p0_q2b_coverage.py` account coverage |
+| 2026-10-25 | [overnight] PNG rows take the screen's category only when the resource prefix belongs to the screen's system; vision emails outside the identity universe are dropped | spec 0009: evidence_04 shows a support_ id on the account console; decoy company emails on evidence_32 |

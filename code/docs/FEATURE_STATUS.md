@@ -13,7 +13,7 @@ spec whose dependencies are not `Completed`.
 | 0006 | [identity-resolution](specs/0006-identity-resolution/) | Completed | 0003 | Resolve the subject and every identifier valid at or before audit_at. |
 | 0007 | [evidence-parsers](specs/0007-evidence-parsers/) | Completed | 0003, 0006 | Parse every non-image evidence file once into Observations with an inverted index. |
 | 0008 | [llm-provider-layer](specs/0008-llm-provider-layer/) | Completed | 0001 | Single structured-call layer for Jev, Azure (Strands) and Gemini (Strands) with cache and usage ledger. |
-| 0009 | [vision-extraction](specs/0009-vision-extraction/) | Not started | 0007, 0008 | Turn the 11 PNG screenshots into Observations. |
+| 0009 | [vision-extraction](specs/0009-vision-extraction/) | Completed | 0007, 0008 | Turn the 11 PNG screenshots into Observations. |
 | 0010 | [discovery-and-state](specs/0010-discovery-and-state/) | Not started | 0006, 0007 (0009 optional) | Find every resource relevant to the subject and its state at audit_at. |
 | 0011 | [policy-obligations](specs/0011-policy-obligations/) | Not started | 0010 | Turn discovered resources + rules into obligations with satisfied/unsatisfied state. |
 | 0012 | [planner-and-evidence](specs/0012-planner-and-evidence/) | Not started | 0004, 0011 | Status decision, full step plan, deterministic evidence citation; end-to-end on samples. |

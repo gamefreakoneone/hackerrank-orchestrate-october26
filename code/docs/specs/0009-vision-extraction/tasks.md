@@ -1,10 +1,10 @@
 # Spec 0009 — vision-extraction: tasks
 
-- [ ] vision.py + prompt
-- [ ] revalidation
-- [ ] tests with recorded cached responses
-- [ ] spot-check 3 PNGs by eye and record in status.md
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0009: <summary>`
+- [x] vision.py + prompt
+- [x] revalidation
+- [x] tests with recorded cached responses
+- [x] spot-check 3 PNGs by eye and record in status.md
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0009: <summary>`
 
 ## Validation commands
 

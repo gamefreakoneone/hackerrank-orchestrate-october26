@@ -1,0 +1,64 @@
+{
+ "records": [
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_003",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "2026-08-25T04:03:00Z"
+  },
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_002",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "25 Aug 03:21"
+  },
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_001",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "24 Aug 16:14"
+  },
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_006",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "22 Aug 11:27"
+  },
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_005",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "20 Aug 09:42"
+  },
+  {
+   "record_type": "Account event",
+   "resource_id": "audit_record_004",
+   "status_text": "Valid",
+   "subject_identifiers": [
+    "user_03"
+   ],
+   "system_hint": "Sentinel",
+   "timestamp": "18 Aug 14:05"
+  }
+ ]
+}
