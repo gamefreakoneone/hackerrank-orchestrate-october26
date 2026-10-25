@@ -1641,3 +1641,45 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T10:33:20Z] Spec 0020: reproducible, accurate evaluation reports
+
+User Prompt (verbatim, secrets redacted):
+Start from the latest origin/claude/eager-cray-7fhtkf.
+Read @AGENTS.md, @CLAUDE.md, @code/docs/TECHNICAL_DESIGN.md,
+@code/docs/FEATURE_STATUS.md, 
+and code/docs/CORRECTIVE_HANDOFF.md.
+Implement specs 0017–0021 in order, following their requirements,
+designs, tasks and acceptance checks.
+
+After each completed spec, update metrics and documentation,
+append the log, export and verify the trace, then commit and PUSH.
+Verify publication before starting the next spec.
+Never mark failed acceptance checks as Completed.
+
+Remember the following principles:
+1. "YAGNI": Don't build it until you need it
+2. "DRY": Extract patterns after second duplication, not before
+3. "FALL FAST": Explicit Errors beat silent failures
+4. "Simple First": Write the obvious solution, optimise only if needed.
+5. "Delete Aggresively": Less code = fewer bugs
+6. "Semantic Naming": Always name variables, parameters, and API endpoints with verbose, self-documenting names that optimise for comprehension by both Humans and LLms, and not brevity. (eg: "wait_until_OBS_IS_save=true" vs "wait=true")
+
+Agent Response Summary:
+Verified 0019 on the remote (52a1854), recorded before metrics and replaced the report pipeline: capture_inputs.py writes a hashed evaluation_inputs.json bundle at a committed revision, and make_reports.py is now model-free, validates hashes, coverage, configurations and revisions (exit 1 on any mismatch), stages reports on request and derives every claim from per-case scores (9 of 12 grounded samples exact, replacing the false "every" claim). Committed and pushed a code-freeze checkpoint (0d7c07d), captured the corrective bundle at that revision (default/ablation sample runs, custom 9/9, discovery, tests 144 passed) and staged reports labelled NOT a unified release; the selected historical reports and final_run stay untouched for 0021. Fixed the README/checklist validator command to pass diagnostics. 144 tests pass.
+
+Actions:
+* git fetch origin claude/specs-0017-0021-5s3kpe (remote = 52a1854); run_eval.py/score.py for 0020_before/0020_after, four ablations, run_custom.py
+* Added code/evaluation/capture_inputs.py and code/tests/test_report_reproducibility.py; rewrote code/evaluation/make_reports.py; edited run_custom.py, code/README.md, docs/SUBMISSION_CHECKLIST.md
+* git commit/push checkpoint 0d7c07d; python code/evaluation/capture_inputs.py --bundle-directory code/evaluation/corrective_run
+* python code/evaluation/make_reports.py --evaluation-inputs ... --report-output-directory code/evaluation/corrective_run/staged_reports [--allow-revision-mismatch]
+* python -m pytest code/tests -q (144 passed, 2 skipped); git diff --check; validator with/without diagnostics on output.csv
+* Updated spec 0020 docs, FEATURE_STATUS.md, TECHNICAL_DESIGN.md, MORNING_REPORT.md; exported trace via scripts/save_trace.sh
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

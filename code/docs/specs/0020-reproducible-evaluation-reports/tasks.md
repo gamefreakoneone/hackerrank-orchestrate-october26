@@ -1,14 +1,14 @@
 # Spec 0020 — Reproducible evaluation reports: tasks
 
-- [ ] Verify 0019 is complete/pushed; record before metrics and inspect every generated report claim.
-- [ ] Implement input manifest validation, persisted evaluation/custom inputs and staged report generation.
-- [ ] Replace hardcoded/overstated claims; distinguish oracle-assisted diagnostics and unmet acceptance criteria.
-- [ ] Correct README/checklist validator commands and document offline report rebuilding.
-- [ ] Add planned reproducibility tests, including explicit failures and report-staging preservation.
-- [ ] Capture actual default/ablation/custom inputs under corrective_run with hashes/revisions; never label these
+- [x] Verify 0019 is complete/pushed; record before metrics and inspect every generated report claim.
+- [x] Implement input manifest validation, persisted evaluation/custom inputs and staged report generation.
+- [x] Replace hardcoded/overstated claims; distinguish oracle-assisted diagnostics and unmet acceptance criteria.
+- [x] Correct README/checklist validator commands and document offline report rebuilding.
+- [x] Add planned reproducibility tests, including explicit failures and report-staging preservation.
+- [x] Capture actual default/ablation/custom inputs under corrective_run with hashes/revisions; never label these
       intermediate metrics as the run that produced the old selected full output.
-- [ ] Record after metrics, update status/tasks/FEATURE_STATUS and MORNING_REPORT, append log and verify trace.
-- [ ] Commit `spec 0020: make evaluation reports reproducible and accurate`, push and verify before 0021.
+- [x] Record after metrics, update status/tasks/FEATURE_STATUS and MORNING_REPORT, append log and verify trace.
+- [x] Commit `spec 0020: make evaluation reports reproducible and accurate`, push and verify before 0021.
 
 ## Validation commands
 

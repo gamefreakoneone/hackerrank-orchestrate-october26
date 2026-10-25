@@ -1,6 +1,6 @@
 # Spec 0020 — Reproducible evaluation reports: requirements
 
-**Status:** Not started. **Depends on:** 0019.
+**Status:** Completed. **Depends on:** 0019.
 
 ## Goal
 

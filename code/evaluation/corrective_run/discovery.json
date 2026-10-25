@@ -1,0 +1,198 @@
+{
+ "account_recall": "12/32",
+ "cases": 32,
+ "extra_accounts": 1,
+ "extra_resources": 3,
+ "gap_table": [
+  {
+   "case_id": "case_01",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_001"
+  },
+  {
+   "case_id": "case_02",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_002"
+  },
+  {
+   "case_id": "case_03",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_9406"
+  },
+  {
+   "case_id": "case_04",
+   "cause": "no_participant_evidence",
+   "resource_id": "account_004"
+  },
+  {
+   "case_id": "case_04",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_901"
+  },
+  {
+   "case_id": "case_07",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_007"
+  },
+  {
+   "case_id": "case_08",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_008"
+  },
+  {
+   "case_id": "case_09",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_3960"
+  },
+  {
+   "case_id": "case_09",
+   "cause": "post_cutoff_evidence_only",
+   "resource_id": "audit_record_4902"
+  },
+  {
+   "case_id": "case_10",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_010"
+  },
+  {
+   "case_id": "case_18",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_5521"
+  },
+  {
+   "case_id": "case_18",
+   "cause": "no_participant_evidence",
+   "resource_id": "audit_record_6645"
+  },
+  {
+   "case_id": "case_20",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_5037"
+  },
+  {
+   "case_id": "case_20",
+   "cause": "no_participant_evidence",
+   "resource_id": "audit_record_5569"
+  },
+  {
+   "case_id": "case_21",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "account_6440"
+  },
+  {
+   "case_id": "case_21",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_5335"
+  },
+  {
+   "case_id": "case_22",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_4990"
+  },
+  {
+   "case_id": "case_23",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_410"
+  },
+  {
+   "case_id": "case_23",
+   "cause": "post_cutoff_evidence_only",
+   "resource_id": "audit_record_4128"
+  },
+  {
+   "case_id": "case_24",
+   "cause": "post_cutoff_evidence_only",
+   "resource_id": "audit_record_7095"
+  },
+  {
+   "case_id": "case_25",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "account_3136"
+  },
+  {
+   "case_id": "case_25",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_1895"
+  },
+  {
+   "case_id": "case_26",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "account_5684"
+  },
+  {
+   "case_id": "case_26",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_4566"
+  },
+  {
+   "case_id": "case_27",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "account_3866"
+  },
+  {
+   "case_id": "case_27",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_4574"
+  },
+  {
+   "case_id": "case_28",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "account_5482"
+  },
+  {
+   "case_id": "case_28",
+   "cause": "eligible_records_without_ownership",
+   "resource_id": "analytics_6077"
+  },
+  {
+   "case_id": "case_29",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_7012"
+  },
+  {
+   "case_id": "case_29",
+   "cause": "post_cutoff_evidence_only",
+   "resource_id": "audit_record_3954"
+  },
+  {
+   "case_id": "case_30",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_4163"
+  },
+  {
+   "case_id": "case_30",
+   "cause": "post_cutoff_evidence_only",
+   "resource_id": "audit_record_1707"
+  },
+  {
+   "case_id": "case_31",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_4857"
+  },
+  {
+   "case_id": "case_32",
+   "cause": "workflow_claims_only",
+   "resource_id": "account_8858"
+  }
+ ],
+ "linkage": {
+  "grounded:correct": 11,
+  "multi_grounded:correct": 1,
+  "ungrounded:ungrounded": 20
+ },
+ "linkage_accuracy": "12/32",
+ "linkage_precision": "12/12",
+ "miss_causes": {
+  "eligible_records_without_ownership": 12,
+  "no_participant_evidence": 3,
+  "post_cutoff_evidence_only": 5,
+  "workflow_claims_only": 14
+ },
+ "other_resource_recall": "65/79",
+ "provenance_of_hits": {
+  "identifier": 75,
+  "identifier+reference": 1,
+  "reference": 1
+ },
+ "resource_recall": "77/111"
+}

@@ -1,0 +1,124 @@
+{
+ "captured_at": "2026-10-25T10:31:54Z",
+ "code_revision": "0d7c07dd7504b2db865d59c59745f152a32e46af",
+ "custom_results": {
+  "exit_code": 0,
+  "path": "custom_results.json",
+  "sha256": "86560abef5a9a460c28f22c17677c576bdcc6998d8afaaa73a6e6efd921652ad"
+ },
+ "discovery_report": {
+  "path": "discovery.json",
+  "sha256": "405a4f3474dcd588ace886b72bfcd2e42b64a5f6beadba9264f3747aa9028f8d"
+ },
+ "provider_configuration": {
+  "llm_cache_entries_before_capture": 51,
+  "provider_keys_present": [
+   "TYPESAFE_API_KEY",
+   "AZURE_OPENAI_API_KEY",
+   "GEMINI_API_KEY"
+  ]
+ },
+ "sample_runs": {
+  "default": {
+   "diagnostics": "sample_default.diagnostics.jsonl",
+   "diagnostics_sha256": "ab2d8771fda1e15edb87298e8c570a778c834e5f1cf7d11cbd316f308035195c",
+   "model_calls": {
+    "attempts": 0,
+    "cached_calls": 49,
+    "calls": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "output_tokens": 0
+   },
+   "pipeline_args": [],
+   "predictions": "sample_default.csv",
+   "predictions_sha256": "c930afc9d3e49aa18d06e8829dc5e0076c83c22890626cb18a8eddd125b5cb52"
+  },
+  "deterministic": {
+   "diagnostics": "sample_deterministic.diagnostics.jsonl",
+   "diagnostics_sha256": "7a9a077eacb9c9613c503d593ff5711c367378a06935d24c08911b99dc69db49",
+   "model_calls": {
+    "attempts": 0,
+    "cached_calls": 0,
+    "calls": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "output_tokens": 0
+   },
+   "pipeline_args": [
+    "--offline",
+    "--no-cache"
+   ],
+   "predictions": "sample_deterministic.csv",
+   "predictions_sha256": "14c99750bfb53c5ad5636f2efb8d2ca86e95eae68d8d413ab0f5a4f83f5b53c5"
+  },
+  "no-history": {
+   "diagnostics": "sample_no-history.diagnostics.jsonl",
+   "diagnostics_sha256": "afd6346fcf4f32b0dadcfa1182d159ac4b25d452281ed83bdaedc3568b39578f",
+   "model_calls": {
+    "attempts": 0,
+    "cached_calls": 49,
+    "calls": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "output_tokens": 0
+   },
+   "pipeline_args": [
+    "--ablate",
+    "no-history"
+   ],
+   "predictions": "sample_no-history.csv",
+   "predictions_sha256": "40b06c40b709456a16581c0eb2e71b2e53a452258862234933f304646539a9bf"
+  },
+  "ranked-accounts": {
+   "diagnostics": "sample_ranked-accounts.diagnostics.jsonl",
+   "diagnostics_sha256": "416e4ca7f3ac54b645485d880e49d9f2e16e592b68ec12a21899e6cb935c0b06",
+   "model_calls": {
+    "attempts": 0,
+    "cached_calls": 49,
+    "calls": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "output_tokens": 0
+   },
+   "pipeline_args": [
+    "--ungrounded-account-steps",
+    "ranked"
+   ],
+   "predictions": "sample_ranked-accounts.csv",
+   "predictions_sha256": "98d6aaf971c849671cc7e6e2c69d3f9a2a21dcdf7f0ace967d9bd76be99add4e"
+  },
+  "trust-claims": {
+   "diagnostics": "sample_trust-claims.diagnostics.jsonl",
+   "diagnostics_sha256": "5b7218358ed37b7bf0fdd7240a5c9741b04622deb251109202443e0cd2698720",
+   "model_calls": {
+    "attempts": 0,
+    "cached_calls": 49,
+    "calls": 0,
+    "cost_usd": 0.0,
+    "input_tokens": 0,
+    "output_tokens": 0
+   },
+   "pipeline_args": [
+    "--ablate",
+    "trust-claims"
+   ],
+   "predictions": "sample_trust-claims.csv",
+   "predictions_sha256": "c930afc9d3e49aa18d06e8829dc5e0076c83c22890626cb18a8eddd125b5cb52"
+  }
+ },
+ "test_results": [
+  {
+   "command": "python -m pytest code/tests -q",
+   "exit_code": 0,
+   "name": "full_suite",
+   "summary": "144 passed, 2 skipped"
+  },
+  {
+   "command": "python -m pytest code/tests/test_metamorphic.py -q",
+   "exit_code": 0,
+   "name": "metamorphic",
+   "summary": "4 passed"
+  }
+ ]
+}

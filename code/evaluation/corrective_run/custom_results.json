@@ -1,0 +1,111 @@
+{
+ "offline": false,
+ "results": [
+  {
+   "case": "expired_retention",
+   "case_id": "case_9006",
+   "expected_status": "INCOMPLETE",
+   "flags": [
+    "POLICY_UNDEFINED"
+   ],
+   "flags_ok": true,
+   "got_status": "INCOMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "historical_email_decoy",
+   "case_id": "case_9001",
+   "expected_status": "INCOMPLETE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "INCOMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "non_deletion_multilingual",
+   "case_id": "case_9003",
+   "expected_status": "NOT_APPLICABLE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "NOT_APPLICABLE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "post_audit_evidence_ignored",
+   "case_id": "case_9002",
+   "expected_status": "COMPLETE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "COMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "repeated_request",
+   "case_id": "case_9071",
+   "expected_status": "INCOMPLETE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "INCOMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "repeated_request",
+   "case_id": "case_9072",
+   "expected_status": "COMPLETE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "COMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "retained_backup_blocked",
+   "case_id": "case_9005",
+   "expected_status": "COMPLETE",
+   "flags": [
+    "CONDITION_DEFAULTED"
+   ],
+   "flags_ok": true,
+   "got_status": "COMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "tombstone_active_sync",
+   "case_id": "case_9004",
+   "expected_status": "INCOMPLETE",
+   "flags": [],
+   "flags_ok": true,
+   "got_status": "INCOMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  },
+  {
+   "case": "ungrounded_account",
+   "case_id": "case_9008",
+   "expected_status": "INCOMPLETE",
+   "flags": [
+    "ACCOUNT_UNGROUNDED",
+    "CONDITION_DEFAULTED"
+   ],
+   "flags_ok": true,
+   "got_status": "INCOMPLETE",
+   "status_ok": true,
+   "steps_ok": true,
+   "validator_ok": true
+  }
+ ]
+}

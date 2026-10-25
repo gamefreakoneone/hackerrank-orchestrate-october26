@@ -24,7 +24,7 @@ spec whose dependencies are not `Completed`.
 | 0017 | [replica-state-and-proof](specs/0017-replica-state-and-proof/) | Completed | 0010, 0012, 0016 | Per-copy state and treatment evidence; prevent a primary-only result from clearing another replica. |
 | 0018 | [required-record-preservation](specs/0018-required-record-preservation/) | Completed | 0017 | Enforce record preservation separately from redaction/anonymization/restore blocking. |
 | 0019 | [grounded-discovery-coverage](specs/0019-grounded-discovery-coverage/) | Completed (investigation only) | 0018 | Evidence-backed discovery improvements or a measured, documented no-improvement outcome. |
-| 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Not started | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
+| 0020 | [reproducible-evaluation-reports](specs/0020-reproducible-evaluation-reports/) | Completed | 0019 | Rebuild truthful reports from preserved artifacts, with correct validation commands and explicit errors. |
 | 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Not started | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
 
 ## Current correction pass
@@ -33,7 +33,7 @@ The overnight implementation is the historical baseline at `2a722566e1367f409a5b
 originally pushed on `claude/nifty-tesla-4ig5f5` and fast-forwarded into `claude/eager-cray-7fhtkf` for this pass.
 Follow `CORRECTIVE_HANDOFF.md` and `reviews/0001-implementation-review.md`. Work branch (cloud session's designated
 push branch): `claude/specs-0017-0021-5s3kpe`, started from `origin/claude/eager-cray-7fhtkf` @ `bf79d4a`.
-**0017–0019 Completed; next: 0020.**
+**0017–0020 Completed; next: 0021.**
 
 The original 0001–0016 statuses record the overnight milestones, not a claim that all current correctness or
 acceptance gaps are closed. In particular, 0010 reported Completed with recall **77/111 versus the ≥85% target**;
@@ -50,7 +50,9 @@ commit (a commit cannot contain its own SHA).
 |---|---|---|---|
 | 0017 | `4f2a05a` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `4f2a05a3a930` |
 | 0018 | `b0c7f27` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `b0c7f275cfe8` |
-| 0019 | `spec 0019: measure and improve grounded discovery` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
+| 0019 | `52a1854` | `claude/specs-0017-0021-5s3kpe` | yes — `git fetch` showed remote = local `52a1854e805b` |
+| 0020 checkpoint | `0d7c07d` (code freeze recorded in the evaluation bundle) | `claude/specs-0017-0021-5s3kpe` | yes — remote = local `0d7c07dd7504` |
+| 0020 | `spec 0020: make evaluation reports reproducible and accurate` | `claude/specs-0017-0021-5s3kpe` | pending (see log) |
 
 ## Planning history
 
