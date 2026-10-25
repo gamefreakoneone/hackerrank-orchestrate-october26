@@ -2006,3 +2006,23 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T11:57:18Z] Specs 0022-0025 done; live sample benchmark; release still pending
+
+User Prompt (verbatim, secrets redacted):
+(same user turn as the "Spec 0022: enforce observation-time cutoffs" entry above; prompt logged there verbatim)
+
+Agent Response Summary:
+All four specs are committed, pushed and remotely verified (0022 90f026c, 0023 acf3b3a, 0024 259b142, 0025 fdbd327). Under the user's explicit permission for live benchmark testing, ran the 32-sample live evaluation with an empty cache: 23/32 status, linkage 12/32, F1 0.896, exact 9/32 (dev 15/20, F1 0.900, exact 5/20), byte-identical to the preserved live sample bundle; 49 calls, about 72.7k tokens, est. $0.14. The full 518-case live release regeneration was not run; root output.csv and the final_run/corrective_run bundles remain the historical b90914b release, which still has the case_135/case_383 defect.
+
+Actions:
+* python code/evaluation/run_eval.py --split all --out runs/corrective/live_sample_after.csv (live providers); score.py --split dev; usage ledger summary.
+* Updated code/docs/MORNING_REPORT.md with the live sample benchmark.
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

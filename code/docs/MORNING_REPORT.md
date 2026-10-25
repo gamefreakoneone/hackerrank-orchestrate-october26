@@ -19,6 +19,15 @@ were not rerun by the review; this pass ran the full offline suite (197 passed /
 | 0024 final artifact hash verification | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (no prediction code changed); 8 report CLI tests failed on the baseline, all pass; preserved reports rebuild byte-identically in runs/corrective/0024_rebuilt |
 | 0025 selected-output configuration guards | Completed | dev 15/20, F1 0.899, exact 5/20 before and after (no prediction code changed); 15 publication tests failed on the baseline, all pass; full suite 197 passed / 2 skipped; reports rebuild byte-identically; code.zip builds (291 files) with historical reports |
 
+**Live sample benchmark after 0022–0025 (user-authorized, 32 samples only; not a release run):** code `fdbd327`,
+`python code/evaluation/run_eval.py --split all --out runs/corrective/live_sample_after.csv` with an empty LLM cache:
+status 23/32, linkage 12/32, step F1 0.896 (159 matched / 162 predicted / 193 gold), exact 9/32; dev split 15/20,
+F1 0.900, exact 5/20. Predictions are **byte-identical** to the preserved live sample bundle
+(`code/evaluation/corrective_run/sample_default.csv`, b90914b): the four fixes change no sample row. 0/15 sample
+flow/backup obligations had an unknown copy. Usage: 49 calls (Jev 34, Gemini 11, Azure 4), 36,331 input / 36,366
+output tokens, est. $0.14 (unverified prices). The corrected full-dataset effect measured offline is case_135 and
+case_383 INCOMPLETE → COMPLETE; the full live release was **not** regenerated (pending explicit permission).
+
 ## Historical corrective pass (specs 0017–0021)
 
 Branch `claude/specs-0017-0021-5s3kpe` (Claude Code cloud session, started from `origin/claude/eager-cray-7fhtkf`
