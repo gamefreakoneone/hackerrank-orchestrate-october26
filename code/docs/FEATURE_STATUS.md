@@ -5,7 +5,7 @@ spec whose dependencies are not `Completed`.
 
 | Spec | Name | Status | Depends on | Deliverable |
 |---|---|---|---|---|
-| 0001 | [scaffold-env-logging](specs/0001-scaffold-env-logging/) | Not started | none | Runnable skeleton: dependencies pinned, env template, README skeleton, a `main.py` that writes a valid all-NOT_APPLICABLE `output.csv`, and a provider smoke test. |
+| 0001 | [scaffold-env-logging](specs/0001-scaffold-env-logging/) | Completed | none | Runnable skeleton: dependencies pinned, env template, README skeleton, a `main.py` that writes a valid all-NOT_APPLICABLE `output.csv`, and a provider smoke test. |
 | 0002 | [dataset-recon](specs/0002-dataset-recon/) | Completed | none | Understand the dataset and the gold format before designing; answer the HANDOFF §3 open questions. |
 | 0003 | [data-contracts-loaders](specs/0003-data-contracts-loaders/) | Not started | 0001 | Typed, timezone-aware loaders for every CSV and the Key Contract models. |
 | 0004 | [serializer-validator](specs/0004-serializer-validator/) | Not started | 0003 | Deterministic output writer and a hard validator for every output rule. |

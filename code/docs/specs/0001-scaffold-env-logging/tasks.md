@@ -1,12 +1,12 @@
 # Spec 0001 — scaffold-env-logging: tasks
 
-- [ ] Pin `code/requirements.txt`
-- [ ] Write `code/.env.example`
-- [ ] Write `code/README.md` skeleton
-- [ ] Implement `code/main.py` stub + `ghostaudit/config.py`
-- [ ] Implement `code/tools/smoke_providers.py`
-- [ ] Add `code/tests/test_main_stub.py` (518 rows, header, numeric order, valid JSON)
-- [ ] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0001: <summary>`
+- [x] Pin `code/requirements.txt`
+- [x] Write `code/.env.example`
+- [x] Write `code/README.md` skeleton
+- [x] Implement `code/main.py` stub + `ghostaudit/config.py`
+- [x] Implement `code/tools/smoke_providers.py`
+- [x] Add `code/tests/test_main_stub.py` (518 rows, header, numeric order, valid JSON)
+- [x] Update FEATURE_STATUS.md, status.md, this file; commit `spec 0001: <summary>`
 
 ## Validation commands
 
