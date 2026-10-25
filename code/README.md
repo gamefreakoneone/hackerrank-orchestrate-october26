@@ -1,7 +1,26 @@
 # Ghost Data Still Exists — deletion-audit agent
 
 Python 3.11+ solution for the HackerRank Orchestrate October 2026 challenge. A deterministic engine
-decides every deletion status and step; models only return typed facts (see `docs/TECHNICAL_DESIGN.md`).
+decides every deletion status and step; models only return typed facts (see `docs/TECHNICAL_DESIGN.md`,
+`docs/INTERVIEW_NOTES.md`).
+
+## Layout
+
+The repository root holds `dataset/` (not shipped) and this `code/` folder; `code.zip` contains the contents of
+`code/`. To run from the zip, unzip it into a folder named `code/` placed next to `dataset/`.
+
+## Architecture
+
+| Stage | Module | Decides / produces |
+|---|---|---|
+| Intent gate | `ghostaudit/intent.py` | Jev choice + keyword cross-check, Azure adjudication; non-deletion ⇒ NOT_APPLICABLE |
+| Identity | `ghostaudit/identity.py` | subject identifiers valid at `audit_at` (current + historical, hashes) |
+| Evidence | `ghostaudit/evidence/` | observations + snapshot coverage from SQL/JSON/logs/txt/PDF, PNG via Gemini |
+| Discovery | `ghostaudit/discovery.py`, `account_link.py` | exact-identifier links, grounded account (ranked guesses only in diagnostics) |
+| State | `ghostaudit/timeline.py` | state at `audit_at` + the evidence that establishes it |
+| Policy | `ghostaudit/policy.py`, `obligations.py` | required end state, tri-state rule conditions, satisfied? |
+| Plan | `ghostaudit/planner.py`, `serialize.py`, `validate.py` | status, findings/remediation/verification, canonical JSON, hard validator |
+| Models | `ghostaudit/llm/` | one structured-call layer: cache, validation, one repair retry, usage ledger |
 
 ## Setup
 
