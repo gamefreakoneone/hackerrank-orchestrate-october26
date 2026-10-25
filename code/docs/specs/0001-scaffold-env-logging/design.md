@@ -2,7 +2,7 @@
 
 Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 
-- `code/main.py`: argparse per TECHNICAL_DESIGN §3.6 (flags accepted, most no-op for now);
+- `code/main.py`: argparse per TECHNICAL_DESIGN §3.7 (flags accepted, most no-op for now);
   `ROOT = Path(__file__).resolve().parents[1]`; read `dataset/deletion_requests.csv` with `csv.DictReader`;
   sort by `int(case_id.split("_")[1])`; write with `csv.writer(lineterminator="\n")`.
 - `code/ghostaudit/__init__.py` (empty package) and `code/ghostaudit/config.py`:

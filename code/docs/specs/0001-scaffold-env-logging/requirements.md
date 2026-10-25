@@ -12,7 +12,7 @@ Runnable skeleton: dependencies pinned, env template, README skeleton, a `main.p
   typesafe-sdk, openai, google-genai, PyYAML, pytest (exact versions from the current env: pydantic 2.13.5,
   pypdf 6.17.0, strands-agents 1.62.0, typesafe-sdk 0.7.5, openai 2.54.0, google-genai 2.33.0, PyYAML 6.0.3,
   pytest 9.1.1).
-- `code/.env.example` lists every env var from TECHNICAL_DESIGN §3.5 with empty values.
+- `code/.env.example` lists every env var from TECHNICAL_DESIGN §3.6 with empty values.
 - `code/README.md`: setup, run, env vars, test commands.
 - `python code/main.py` writes root `output.csv` with 518 rows `case_id,NOT_APPLICABLE,[]`, numerically sorted.
 - `python code/tools/smoke_providers.py` makes one minimal call each to Jev, Azure, Gemini and prints

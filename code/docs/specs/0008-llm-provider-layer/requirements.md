@@ -8,7 +8,7 @@ Single structured-call layer for Jev, Azure (Strands) and Gemini (Strands) with 
 
 ## Requirements / acceptance criteria
 
-- Implements `StructuredCall` (TECHNICAL_DESIGN §3.5) for `jev`, `azure`, `gemini`.
+- Implements `StructuredCall` (TECHNICAL_DESIGN §3.6) for `jev`, `azure`, `gemini`.
 - Schema validation + exactly one repair retry (re-ask with validation error) then raise `LLMError`.
 - Disk cache `code/.cache/llm/<sha256>.json` (gitignored); `--no-cache` bypass; `--offline` = cache-only.
 - Usage ledger appended to `runs/usage_<run_id>.jsonl`; `ledger.summarize()` returns per-model and overall

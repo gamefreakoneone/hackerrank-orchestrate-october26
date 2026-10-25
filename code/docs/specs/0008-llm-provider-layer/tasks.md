@@ -16,4 +16,5 @@
 python -m pytest code/tests/test_llm_*.py -q
 RUN_LIVE=1 python -m pytest code/tests/test_llm_live.py -q
 python code/tools/smoke_providers.py
+python code/evaluation/run_eval.py --split dev
 ```

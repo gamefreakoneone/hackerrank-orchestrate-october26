@@ -26,14 +26,16 @@ dataset/evidence ─► parsers (once per file, cached by sha256 + parser versio
     └─► Observation ledger + inverted index (identifier → obs, resource_id → obs)
 per case:
   1 intent gate ─ not deletion → NOT_APPLICABLE, []
-  2 identity resolver: identifier set as of audit_at
-  3 discovery: identifier-linked records (≤ audit_at) → fixed-point expansion
-              + account resolution from deletion-workflow activity (§5 Q3)
-  4 state @ audit_at per resource: latest observation from a file with captured_at ≤ audit_at
-  5 policy → obligations (required end state per resource / flow / backup)
-  6 status = all obligations satisfied ? COMPLETE : INCOMPLETE
+  2 identity resolver: identifier set as of audit_at (later audit changes reverted)
+  3 discovery: exact identifier-linked records (≤ audit_at) → fixed-point expansion
+              + subject-level account link (§5 Q3): reference links first, workflow timing only ranks
+  4 state @ audit_at per resource: latest establishing observation or SnapshotCoverage (file captured_at ≤ audit_at);
+    nothing establishes it ⇒ UNKNOWN
+  5 policy → obligations (required end state; rule conditions TRUE/FALSE/UNKNOWN)
+  6 status = no completion blocker ∧ ≥1 obligation ∧ all satisfied ? COMPLETE : INCOMPLETE (§3.5)
   7 planner: findings + remediation (INCOMPLETE) + verification for every obligation
-  8 evidence selection (§5 Q2) → canonical sort → validator → output.csv
+  8 citation (§5 Q2: establishing file; activity/audit id fallback) → canonical sort → validator → output.csv
+    + diagnostics (flags) per case
   usage ledger → evaluation/usage_report.md
 ```
 
@@ -80,13 +82,34 @@ class Observation(BaseModel, frozen=True):
     identifiers: frozenset[str]       # emails, phones, names, hashes, user_ids found in the record
     fields: Mapping[str, str | None]  # normalized: status_code, enabled, restore_allowed,
                                       # retention_until, event, matched_value, ... (None = null)
-    coverage: Literal["record", "full_table"]  # full_table ⇒ absence of a resource is observable
 ```
 
 One record = one SQL row, one JSON object carrying a `resource_id`, one log **trace_id group**
 (or single line without trace_id), one PDF, one PNG row extracted by vision.
 
-### 3.3 VisionRecord (LLM output, PNG only)
+### 3.3 SnapshotCoverage (absence evidence) — `ghostaudit/evidence/model.py`
+
+Separate from `Observation` because an empty table/collection has no record but still proves absence.
+
+```python
+class SnapshotCoverage(BaseModel, frozen=True):
+    file_id: str
+    captured_at: datetime             # manifest captured_at (cutoff key); snapshot-level time kept in `snapshot_at`
+    snapshot_at: datetime | None      # "Captured at" header / snapshots[].captured_at / snapshot_scope.captured_at
+    system_id: str                    # logical service (account_service, …)
+    collection: str                   # table or collection, e.g. "customer_profiles_failover_replica"
+    physical_copy: str                # "primary", "failover_replica", "read_replica", "replica_eu_west", "bundle", …
+    scope: str                        # what the snapshot claims to cover: "full_table", or the
+                                      # snapshot_scope origin_system list for inventory files
+    row_count: int                    # 0 is valid and meaningful (evidence_51, evidence_90)
+    resource_ids: frozenset[str]
+```
+
+Emitted for complete SQL tables, generic-store collections (`customer_data_*` × `collection_name`), inventory
+tables under `snapshot_scope`, and bundle `snapshots[]` entries. Never for `service_resource_export` lookups,
+logs, PDFs or PNGs (those observe specific resources only).
+
+### 3.3b VisionRecord (LLM output, PNG only)
 
 ```python
 class VisionRecord(BaseModel):
@@ -108,8 +131,10 @@ class Obligation(BaseModel, frozen=True):
     required: Literal["ABSENT", "REDACTED", "ANONYMIZED", "PRESENT", "DISABLED", "BLOCKED"]
     current: Literal["PRESENT", "EXPOSED", "ACTIVE", "ABSENT", "REDACTED", "ANONYMIZED",
                      "DISABLED", "BLOCKED", "UNKNOWN"]
-    proof: str                        # file_id of the observation establishing `current`, or ""
-    satisfied: bool
+    condition: Literal["TRUE", "FALSE", "UNKNOWN"]  # rule condition at audit_at; UNKNOWN ⇒ default branch, flagged
+    proof: str                        # establishing file_id (preferred) or activity_id/audit_id fallback, or ""
+    proof_kind: Literal["file", "activity", "audit", ""]
+    satisfied: bool                   # False whenever current == "UNKNOWN"
 ```
 
 Templates (from rules + gold):
@@ -123,11 +148,34 @@ Templates (from rules + gold):
 | BLOCKED (BACKUP_ARCHIVE) | REPORT_RESTORE_RISK | BLOCK_RESTORE | VERIFY_RESTORE_BLOCKED |
 | DISABLED (active data flow) | REPORT_ACTIVE_DATA_FLOW | DISABLE_DATA_FLOW | VERIFY_DATA_FLOW_DISABLED |
 
-Planner: INCOMPLETE ⇒ findings + remediation for unsatisfied obligations (cited / empty),
-verification for **every** obligation with `evidence_id=""`. COMPLETE ⇒ verification only, each
+Planner: INCOMPLETE ⇒ findings + remediation for unsatisfied obligations with known state (cited /
+empty), verification for **every** obligation with `evidence_id=""`. COMPLETE ⇒ verification only, each
 citing its `proof`.
 
-### 3.5 Provider interface — `ghostaudit/llm/`
+### 3.5 Completion blockers and diagnostics
+
+A case is COMPLETE only if no blocker fires, there is ≥1 obligation, and every obligation is satisfied with
+proof. Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted by the scorer report):
+
+| Flag | When | Status | Steps |
+|---|---|---|---|
+| `UNRESOLVED_ACCOUNT` | no reference link and no unowned workflow candidate | INCOMPLETE | no account steps (no resource_id to name); other obligations planned normally |
+| `ACCOUNT_LINK_DEFAULT` | account chosen by the workflow-timing default (§5 Q3) | not a blocker | planned normally (COMPLETE still needs proof of the account's state) |
+| `UNKNOWN_STATE` | no eligible file / coverage / activity establishes the state | INCOMPLETE | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
+| `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE | `[]` |
+| `CONDITION_DEFAULTED` | rule condition has no field (UNKNOWN) | not a blocker | default branch |
+| `ACTIVITY_CITATION` | proof is an activity_id / audit_id | not a blocker | cited as is |
+
+No finding or evidence is ever invented to fill a blocker. The validator downgrades "INCOMPLETE without
+findings" from error to warning only when a blocker flag is present.
+
+Phase-0b measurement on samples (`p0_q3c_account_link.py` §C, gold as oracle): 0 `UNRESOLVED_ACCOUNT`;
+`ACCOUNT_LINK_DEFAULT` on 20/32 cases (9 COMPLETE: 2 right account; 11 INCOMPLETE: 6 right). Treating the
+default as a blocker would turn 9/10 COMPLETE samples INCOMPLETE, so it is a flag, not a blocker.
+`UNKNOWN_STATE` over gold resources: 8/111 (all retained audit records in INCOMPLETE cases, plus account_004 in
+COMPLETE case_04, which is a linking miss rather than a state gap since evidence_54 covers it).
+
+### 3.6 Provider interface — `ghostaudit/llm/`
 
 ```python
 class StructuredCall(Protocol):
@@ -144,7 +192,7 @@ Providers: `jev` (typesafe-sdk), `azure` (Strands `OpenAIModel`, `base_url=AZURE
 `AZURE_DEPLOYMENT_FALLBACK`, `GEMINI_API_KEY`, `GEMINI_VISION_MODEL`. `--offline` runs with
 cache only and deterministic fallbacks (keyword intent, no PNG facts).
 
-### 3.6 CLI
+### 3.7 CLI
 
 ```
 python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [--case case_NN ...]
@@ -158,10 +206,18 @@ only by `code/evaluation/`, never by `ghostaudit/`.
 
 As HANDOFF §5, plus `code/tools/` (Phase-0 analysis scripts `p0_*.py`, provider smoke test).
 
-## 5. Data-derived decisions (Phase 0)
+## 5. Data-derived decisions (Phase 0, corrected in Phase 0b)
 
-Scripts: `code/tools/p0_q2_evidence_selection.py`, `p0_q3_discovery.py`, `p0_q3c_account_link.py`,
-`p0_q1_q5_categories.py`. All numbers are on the 32 samples (111 gold resources, 75 cited steps).
+Scripts: `code/tools/p0_q2_evidence_selection.py`, `p0_q2b_coverage.py`, `p0_q3_discovery.py`,
+`p0_q3c_account_link.py`, `p0_q1_q5_categories.py`. All numbers are on the 32 samples (111 gold resources,
+75 cited steps). Phase 0b (after the Codex review `code/docs/reviews/0000b-codex-phase0-review.md`) made every
+measurement cutoff-safe (files by manifest captured_at, activity and audit rows by event_time, all ≤ audit_at;
+identity values as of audit_at) and replaced substring matching with exact identifier matching.
+
+**Evaluation honesty.** Every sample answer was inspected to make these decisions, so the 32 samples (and any
+dev/holdout split of them) are a **regression set**, not untouched validation. Held-out evidence comes from
+synthetic cases and metamorphic tests (spec 0014). All rules below are fitted to samples; small counts (e.g.
+4/4) are hypotheses that the full run must keep checking via diagnostics.
 
 ### Q1 — Where does `data_category` come from?
 
@@ -193,40 +249,63 @@ Explicit fields first, then container names, then log event names; LLM only as f
 
 ### Q2 — Which file does gold cite?
 
-- **71/71** cited steps whose resource_id appears in some eligible file cite the **latest file
-  (manifest `captured_at`) ≤ audit_at that mentions the resource**. 0/75 cite a file captured after
-  audit_at.
-- The remaining **4/75** (case_01/02/04 → `evidence_54`, case_31 → `evidence_51`) are
-  VERIFY_RECORD_ABSENT for accounts that are **not mentioned** in the cited file: it is a full-table
-  snapshot of the account tables (failover + primary) in which the account is missing. Rule: if no
-  eligible file mentions the resource, cite the latest eligible `coverage="full_table"` snapshot of
-  that logical system.
-- Cutoff is by file `captured_at`, not line timestamps: `evidence_06` (captured 2026-09-18) has
-  lines dated 2026-09-16 that would prove case_09 facts, and gold does not use it.
+- **71/71** cited steps whose resource_id appears in some eligible text file cite the **latest file (manifest
+  `captured_at`) ≤ audit_at that mentions the resource**. 0/75 cite a file captured after audit_at. This is a
+  heuristic fit, not a proven state-reconstruction rule.
+- The remaining **4/75** are VERIFY_RECORD_ABSENT for accounts **not mentioned** in the cited file; the file is a
+  snapshot whose account table/collection omits the account (case_01/02/04 → `evidence_54`, case_31 →
+  `evidence_51`, whose account `customer_profiles` collection is **empty**). This needs a coverage record that
+  exists even with zero rows → `SnapshotCoverage` (§3.3).
+- **Citation rule = latest eligible file that ESTABLISHES the required state for that system**
+  (`p0_q2b_coverage.py`, 4/4 omission citations):
+  1. observed state: latest eligible observation of the resource showing the state (the 71/71 rule);
+  2. absence by omission: eligible `SnapshotCoverage` of the system, captured **after the resource's last
+     DELETE_RECORD activity** (if any), not containing the resource; prefer the snapshot covering **more physical
+     copies**, then the latest.
+  - case_04 (audit 09-07, no deletion activity): `evidence_54` (09-02, primary **and** failover replica) beats the
+    newer `evidence_90` (09-05, inventory scoped to account_service, primary `customer_profiles` only, 0 rows).
+    A primary-only snapshot cannot establish absence across replicas — case_05 shows exactly this drift (primary
+    empty, failover replica still holds account_005). Same choice for case_01/02 (evidence_10 is older and also
+    two copies).
+  - case_31 (audit 09-15, account_4857 deleted 09-06): `evidence_54` and `evidence_90` predate the deletion, so they
+    cannot prove it; of `evidence_07` (09-13) and `evidence_51` (09-15) the latest is cited.
+  3. fallback when no file establishes the state: an `activity_id`/`audit_id` ≤ audit_at whose content states the
+     result (the participant contract allows these citations; samples never needed them), flagged
+     `ACTIVITY_CITATION`.
+- Cutoff is by file `captured_at`, not line timestamps: `evidence_06` (captured 2026-09-18) has lines dated
+  2026-09-16 that would prove case_09 facts, and gold does not use it.
 
 ### Q3 — Does identifier search + expansion find the gold resources?
 
-- Identifier co-occurrence in one record (SQL row / JSON object / **log trace_id group** / PDF),
-  plus LINK_RESOURCE_IDENTITY, finds **77/111** gold resources with 45 extra candidates
-  (mostly other audit_records or backups from the same snapshot rows; filtered later by policy and
-  state). Trace grouping is required: readback logs put `lookup_key=<email>` on the
-  `*_started` line and `resource_id` on the `*_completed` line (fixed case_15, case_17).
-- Name matching must be exact field equality, not substring (decoy `Jonas Berglund` vs
-  `Jonas Berg`, `Mateo Rios Gil` vs `Mateo Ríos`).
-- Misses are dominated by resources whose identifiers were already removed: deleted accounts
-  (`profile: null`, status 404) and anonymized analytics (`customer_reference: null`). Their only
-  link is the deletion workflow's activity.
-- Every sample case has **exactly one** account_service resource. A `DELETE_RECORD → account_service`
-  activity in `[requested_at, reported_at + 15 min]` contains it in 31/32 cases, but with decoys;
-  "nearest to reported_at" is right only 14/32 (many cases share reported_at). Identifier
-  ownership resolves 15/32 uniquely; 16 remain ambiguous. **Plan (spec 0010):** global one-to-one
-  assignment of workflow resources to requests across all 518 cases (each account belongs to one
-  request; exclude accounts owned by another subject's identifiers or classified for another
-  request), then burst co-membership for anonymized analytics.
-- **Ceiling under the cutoff rule:** of 111 gold resources, 89 appear in a pre-audit file, 14 only
-  in pre-audit activity, **8 nowhere before audit_at** (account_004 and 7 retained audit_records,
-  e.g. audit_record_4128 only in `evidence_02` captured 2026-09-17 > audit 2026-09-15). We keep the
-  hard rule and accept this ~7% resource-recall ceiling.
+Cutoff-safe, exact matching (`p0_q3_discovery.py`): emails, user_ids and sha256 hashes compared as whole tokens;
+names and phones must not be embedded in a longer word/number.
+
+- Identifier co-occurrence in one record (SQL row / JSON object / **log trace_id group** / PDF / txt row) plus
+  LINK_RESOURCE_IDENTITY finds **77/111** gold resources with **3** extra candidates (Phase 0 substring matching
+  reported 45 extras: the old numbers did not validate exact matching). Trace grouping is required: readback
+  logs put `lookup_key=<email>` on the `*_started` line and `resource_id` on the `*_completed` line.
+- Decoys that exact matching rejects: `Jonas Berglund` vs `Jonas Berg`, `Mateo Rios Gil` vs `Mateo Ríos`.
+- Misses are dominated by resources whose identifiers were already removed: deleted accounts (`profile: null`,
+  status 404) and anonymized analytics (`customer_reference: null`).
+- **Account linking** (`p0_q3c_account_link.py`). Every sample case has exactly one account_service resource.
+  - A. Phase-0 heuristic re-run cutoff-safe (window upper bound `min(audit_at, reported_at + 15 min)`):
+    identifier-owned correct **12/32** (was 15/32 with future leakage; lost case_09, case_26, case_27), unique
+    unowned 2, ambiguous 18. (The review measured 12 / 1 / 19 with substring matching.)
+  - B. Subject-level linking, reference links first (pre-deletion rows, customer/subject_reference, LINK activity,
+    trace groups, all ≤ audit_at): **12/32 resolved, 0 wrong**. For the other 20, workflow candidates not linked
+    to another user, ranked; defaults measured on those 20: nearest to reported_at **8**, latest before reported_at
+    5, earliest after request 2, unique-candidate-only 2 (18 none), claim-aware nearest (prefer activities this
+    request is the closest request to) 8. **Default = nearest to reported_at, flagged `ACCOUNT_LINK_DEFAULT`.**
+    Overall account correct 20/32; 0 unresolved.
+  - No one-to-one constraint: unique account ownership does not imply unique request ownership. The evaluation
+    set has **1 subject with 2 requests (case_33, case_52)**; linking is per subject, with per-request cutoffs.
+  - Tombstones carry `subject_reference` (user_id) but no account id: they confirm the subject, not the account.
+- **Ceiling under the cutoff rule (text + CSV only):** of 111 gold resources, 89 appear in a pre-audit text file,
+  14 only in pre-audit activity, **8 in neither**: account_004 (case_04) and audit_record_4902/6645/5569/4128/
+  7095/3954/1707. PNG contents were **excluded** from this count, so it is not a proven ceiling. Spec 0009 must
+  check `evidence_37` security_audit_explorer_20260905.png (eligible for all 7 audit-record cases; the visible
+  table shows only user_03's audit_record_001–006) and `evidence_42` deleted_account_reference_20260310.png for
+  account_004 (`evidence_04` account_admin_console_20260926.png is after case_04's cutoff).
 
 ### Q4 — How is COMPLETE proven for flows and backups?
 
@@ -236,20 +315,21 @@ Explicit fields first, then container names, then log event names; LLM only as f
 identifier fields null, `security_service.audit_records[].retention_until`. Readback logs give the same
 facts per trace (`enabled=`, `eligible=`/`deletion_block=`, `http_status=404`). Active risk evidence:
 `enabled=true`, `restore_allowed=1`/`eligible=true deletion_block=false`, CHECK_DATA_FLOW /
-CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline only, never cited).
+CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited only as the §Q2 fallback).
 
 ### Q5 — Condition-failure branches?
 
-- `retention_until`: 4 distinct values, 2031-12-31 … 2034-09-30, all later than every audit_at
-  (max 2026-10-01) ⇒ retention never expired.
+- `retention_until`: 4 distinct values, 2031-12-31 … 2034-09-30, all later than every audit_at (max 2026-10-01).
 - No shared-attachment / other-customer / hold-released signals in any file.
 - Legal holds exist (`legal_hold_*`, 7 files, `retained_order_records`) but none in sample gold.
-- ⇒ Implement the default branch of every rule; RETAIN ⇒ VERIFY_RECORD_PRESENT; log a warning if a
-  condition field ever contradicts the default.
+- ⇒ Conditions are **tri-state** (TRUE / FALSE / UNKNOWN). Where a field exists (retention_until, hold status /
+  register entry, restore_allowed) it is evaluated at audit_at and a FALSE result switches the branch (e.g.
+  expired retention ⇒ DELETE). Where no field exists ⇒ UNKNOWN ⇒ default branch, flagged `CONDITION_DEFAULTED`.
+  Not observing a FALSE in samples is not a reason to ignore it; synthetic cases (0014) cover the FALSE branches.
 
 ### Other facts carried from DATA_NOTES / GOLD_TRACE
 
-- Gold cites only `file_id`s (never activity_id/audit_id).
+- Sample gold cites only `file_id`s; the contract also allows activity_id/audit_id (kept as a fallback, §Q2).
 - INCOMPLETE gold verifies every obligation (40 VERIFY_RECORD_ABSENT vs 21 DELETE_RECORD; 17
   VERIFY_RECORD_PRESENT for audit records); backups verify as VERIFY_RESTORE_BLOCKED.
 - Physical replicas report under the logical system; present in any copy ⇒ PRESENT.
@@ -261,10 +341,17 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline only, nev
 | Date | Decision | Why |
 |---|---|---|
 | 2026-10-25 | Evidence eligibility = manifest `captured_at ≤ audit_at` (file level) | Q2: gold never cites later files even when they contain earlier-timestamped lines |
-| 2026-10-25 | ABSENT may be proven by a full-table snapshot omitting the resource | Q2: 4/75 gold citations; refines HANDOFF "never infer ABSENT from not mentioning" |
+| 2026-10-25 | ABSENT may be proven by a full-table snapshot omitting the resource | Q2: 4/75 gold citations; refines HANDOFF "never infer ABSENT from not mentioning" (representation corrected in 0b) |
 | 2026-10-25 | Log record = trace_id group | Q3: lookup key and resource_id are on different lines |
 | 2026-10-25 | Category from record_type → container name → log event name → Jev fallback | Q1 |
 | 2026-10-25 | Accept 8/111 unreachable resources rather than use post-audit evidence | AGENTS.md §6.2 / CLAUDE.md hard rule |
-| 2026-10-25 | Account resolution via global request↔workflow-activity assignment (spec 0010) | Q3c: identifiers resolve only 15/32 |
-| 2026-10-25 | Only default rule branches implemented | Q5: no condition failures in data |
+| 2026-10-25 | ~~Account resolution via global request↔workflow-activity assignment~~ (superseded in 0b) | Q3c: identifiers resolve only 15/32 (number later found to leak future evidence) |
+| 2026-10-25 | ~~Only default rule branches implemented~~ (superseded in 0b) | Q5: no condition failures in data |
 | 2026-10-25 | Phase-0 scripts live in `code/tools/p0_*.py`; recon/trace scripts moved to `code/` | HANDOFF Phase 0 step 6 |
+| 2026-10-25 | **0b** Measurements cutoff-safe on files, activity and audit rows; exact identifier matching | Codex review finding 1: account baseline leaked future evidence (15→12/32); substring `hit()` |
+| 2026-10-25 | **0b** Subject-level account linking: reference links first, workflow timing only ranks; default = nearest to reported_at, flagged | Codex finding 2: repeated requests (case_33/case_52); 0b measurement 12/32 ref links, default 8/20 |
+| 2026-10-25 | **0b** `SnapshotCoverage` contract separate from `Observation`; cite the latest file that establishes the state (post-deletion, most physical copies, latest) | Codex finding 3: empty collection in evidence_51; case_04 cites evidence_54 not evidence_90 |
+| 2026-10-25 | **0b** Completion blockers with exact output (§3.5); never COMPLETE silently | Codex finding 4 |
+| 2026-10-25 | **0b** Activity/audit citations allowed as a flagged fallback; policy conditions tri-state | Codex finding 5; participant contract allows these citations |
+| 2026-10-25 | **0b** 8 "unreachable" resources measured without PNGs; spec 0009 checks evidence_37 / evidence_42 | Codex verification note |
+| 2026-10-25 | **0b** Samples are a regression set; synthetic + metamorphic cases are the held-out evidence; scorer tables added to 0005 and 0008 | Codex evaluation corrections |

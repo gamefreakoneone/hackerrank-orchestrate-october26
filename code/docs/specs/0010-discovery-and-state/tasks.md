@@ -1,7 +1,7 @@
 # Spec 0010 — discovery-and-state: tasks
 
 - [ ] discovery.py
-- [ ] assignment.py
+- [ ] account_link.py
 - [ ] timeline.py
 - [ ] discovery_report.py
 - [ ] tests: case_05 replica drift, case_06 decoy, case_15 trace grouping, case_17 restore risk, full_table absence (case_01)

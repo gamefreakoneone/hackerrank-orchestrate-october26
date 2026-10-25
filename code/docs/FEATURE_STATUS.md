@@ -22,6 +22,14 @@ spec whose dependencies are not `Completed`.
 | 0015 | [full-run-ablations-reports](specs/0015-full-run-ablations-reports/) | Not started | 0014 | Final cold-cache full run, ablations, and the two required evaluation reports. |
 | 0016 | [packaging-and-interview](specs/0016-packaging-and-interview/) | Not started | 0015 | Submission artifacts and interview preparation. |
 
+## Planning history
+
+- Phase 0 (`66e8559`): design, spec plan, data-derived decisions.
+- Codex review `code/docs/reviews/0000b-codex-phase0-review.md` (`283fc2f`) → Phase 0b planning corrections:
+  cutoff-safe exact baselines, subject-level account linking (no one-to-one assignment), `SnapshotCoverage`,
+  completion blockers, activity/audit citation fallback, tri-state policy conditions, PNG checks for the 8
+  unreachable resources, samples treated as a regression set, scorer tables in 0005 and 0008.
+
 ## Status definitions
 
 - **Not started** — no code for this spec exists.

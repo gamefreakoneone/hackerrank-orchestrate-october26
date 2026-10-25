@@ -11,3 +11,5 @@ Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 - `ghostaudit/llm/hardening.py`: `repair_json(text)`, `validate(schema, data)`.
 - `ghostaudit/llm/cache.py`, `ghostaudit/llm/ledger.py` as specified.
 - Tests use a fake provider; one opt-in live test behind `RUN_LIVE=1`.
+- Live provider access is **not yet verified** (Phase 0 only checked env var names); this spec's smoke run is the
+  first proof. The scorer snapshot should be unchanged (no pipeline use yet) — record it to prove no regression.

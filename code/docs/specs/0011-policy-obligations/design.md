@@ -2,7 +2,8 @@
 
 Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 
-- `ghostaudit/policy.py`: `category_of(obs) -> str`; `required_state(category) -> RequiredState` from
+- `ghostaudit/policy.py`: `condition(rule, obs, audit_at) -> Literal["TRUE","FALSE","UNKNOWN"]`;
+  `category_of(obs) -> str`; `required_state(category, condition) -> RequiredState` from
   `deletion_rules.csv` actions: DELETE→ABSENT, REDACT→REDACTED, ANONYMIZE→ANONYMIZED, RETAIN→PRESENT
   (BACKUP_ARCHIVE→BLOCKED).
 - `ghostaudit/obligations.py`: `build(case_resources, states) -> list[Obligation]`; `satisfied` comparison table.

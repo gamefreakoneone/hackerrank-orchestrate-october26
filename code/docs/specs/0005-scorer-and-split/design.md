@@ -7,3 +7,5 @@ Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 - LCS over the ordered list of step keys / max(len).
 - Split: sort sample case_ids, `random.Random(20261025)` shuffle within each status, take 2/3 per stratum (dev).
 - Reads `sample_output.csv` (allowed here; evaluation only).
+- Also report diagnostics counts per run: completion-blocker flags (UNRESOLVED_ACCOUNT, ACCOUNT_LINK_DEFAULT,
+  UNKNOWN_STATE, EMPTY_OBLIGATIONS) and activity/audit citations, so their score impact is measured.

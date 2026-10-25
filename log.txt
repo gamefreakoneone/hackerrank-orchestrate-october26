@@ -613,3 +613,57 @@ repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
 
+## [2026-10-25T06:48:32Z] Phase 0b: planning corrections after Codex review
+
+User Prompt (verbatim, secrets redacted):
+Read code/docs/reviews/0000b-codex-phase0-review.md first; it is the review this pass responds to.
+
+Planning correction pass (no feature code). An independent review (Codex) found issues; fix the plan:
+
+1. Cutoff-safe baselines: fix p0_q3c_account_link.py to apply per-case cutoffs to files,
+   activity, and audit rows (expected ~12/32, not 15/32); fix substring matching in
+   p0_q3_discovery.py to exact identifier matching. Re-report all Q3 numbers.
+2. Account linking: replace mandatory one-to-one request/account assignment. Link at the
+   subject (user_id) level so repeated requests (e.g. case_33/case_52) share an account.
+   Priority: timestamped identity/reference links (pre-deletion snapshots, tombstone user_id,
+   subject/customer_reference, LINK_RESOURCE_IDENTITY, all <= audit_at); workflow timing only
+   ranks candidates. Define a concrete default for still-ambiguous cases, chosen by sample
+   measurement, and flag it in debug output.
+3. Coverage contract: add a SnapshotCoverage record (system, collection, physical copy,
+   scope, captured_at) separate from Observation, so empty tables/collections (e.g.
+   evidence_51) can prove absence. Citation rule = latest eligible file that ESTABLISHES the
+   required state for that system (explain case_04 citing evidence_54 over evidence_90).
+4. Completion blockers: unresolved subject account, unknown state, or empty obligation list
+   must never yield COMPLETE silently. Define the exact output behavior and measure it.
+5. Contract fidelity: allow activity/audit citations as a fallback when no file establishes
+   the state (files preferred). Policy conditions are tri-state (true/false/unknown) where
+   fields exist (retention_until, holds); default + flag where no field exists.
+6. Note that PNG contents were excluded from the 8 "unreachable" resources; list which PNGs
+   might contain them (e.g. security_audit_explorer) for spec 0009 to check.
+7. Evaluation honesty: the 32 samples are a regression set, not untouched validation;
+   synthetic cases + metamorphic tests are the held-out evidence. Add scorer tables to
+   specs 0005 and 0008.
+
+Update TECHNICAL_DESIGN.md (data-derived decisions + decision log crediting the review),
+the affected specs, and FEATURE_STATUS.md. Commit as "phase 0b: planning corrections".
+Stop and summarize; do not start spec 0001.
+
+Before committing, run scripts/save_trace.sh. Commit, push, confirm the tree is clean, then stop and summarize.
+
+Agent Response Summary:
+Made all Phase-0 measurements cutoff-safe (files, activity, audit rows; identity as of audit_at) with exact identifier matching: discovery 77/111 with 3 extras (was 45); original account heuristic 12/32; subject-level reference links 12/32 with 0 wrong; for the 20 ambiguous cases the best default (nearest to reported_at, flagged ACCOUNT_LINK_DEFAULT) is 8/20; one repeated subject (case_33/case_52). Added SnapshotCoverage and an "establishing file" citation rule (post-deletion, most physical copies, latest) that fits 4/4 omission citations and explains case_04 -> evidence_54 over evidence_90. Defined completion blockers with exact output, activity/audit citation fallback, tri-state conditions, the PNG check list for spec 0009, and regression-set framing; regenerated specs (scorer tables now in 0005 and 0008). No feature code.
+
+Actions:
+* Read code/docs/reviews/0000b-codex-phase0-review.md
+* Rewrote code/tools/p0_q3_discovery.py and p0_q3c_account_link.py; added p0_q2b_coverage.py; ran all p0 scripts
+* Edited code/docs/TECHNICAL_DESIGN.md; regenerated code/docs/specs/* and FEATURE_STATUS.md
+* Ran scripts/save_trace.sh; git commit "phase 0b: planning corrections"; git push
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/eager-cray-7fhtkf
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none
+
