@@ -1,4 +1,7 @@
-"""One minimal live call per provider. Prints only `provider: OK|FAIL <error class>`; never keys or raw output."""
+"""One minimal live call per provider through the shared LLM layer (no cache, no ledger file).
+
+Prints only `provider: OK|FAIL <error class>`; never keys, endpoints or raw responses.
+"""
 from __future__ import annotations
 
 import sys
@@ -8,67 +11,36 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pydantic import BaseModel  # noqa: E402
 
-from ghostaudit.config import require_env  # noqa: E402
+from ghostaudit.llm.providers import LLMLayer  # noqa: E402
 
 
 class DeletionRequestedAnswer(BaseModel):
     deletion_requested: bool
 
 
-def azure_openai_v1_base_url(endpoint: str) -> str:
-    """Azure resource endpoints are OpenAI-compatible under /openai/v1/."""
-    endpoint = endpoint.rstrip("/")
-    return endpoint + "/" if endpoint.endswith("/openai/v1") else endpoint + "/openai/v1/"
-
-
-def smoke_jev() -> str:
-    from typesafe_sdk import Noul, TypeSafeClient
-
-    with TypeSafeClient(api_key=require_env("TYPESAFE_API_KEY"), base_url=require_env("TYPESAFE_API_BASE")) as client:
-        response = client.system_one(
-            state={"request_text": "Please delete my account."},
-            questions={"asks_for_deletion": Noul(instructions="Does `request_text` ask to delete personal data?")},
-            model=require_env("JEV_MODEL"),
-        )
-    probability_yes = response.nouls["asks_for_deletion"].noul
-    return f"model={response.model} p_yes={probability_yes:.2f}"
-
-
-def smoke_azure() -> str:
-    from strands import Agent
-    from strands.models.openai import OpenAIModel
-
-    model = OpenAIModel(
-        client_args={"api_key": require_env("AZURE_OPENAI_API_KEY"),
-                     "base_url": azure_openai_v1_base_url(require_env("AZURE_OPENAI_ENDPOINT"))},
-        model_id=require_env("AZURE_DEPLOYMENT_FALLBACK"),
-        # The deployment rejects function tools (Strands structured output) unless reasoning is off.
-        params={"reasoning_effort": "none"},
-    )
-    result = Agent(model=model, callback_handler=None)(
-        "Request: 'Please delete my account.' Does it ask for deletion?",
-        structured_output_model=DeletionRequestedAnswer,
-    )
-    return f"deletion_requested={result.structured_output.deletion_requested}"
-
-
-def smoke_gemini() -> str:
-    from strands import Agent
-    from strands.models.gemini import GeminiModel
-
-    model = GeminiModel(client_args={"api_key": require_env("GEMINI_API_KEY")},
-                        model_id=require_env("GEMINI_VISION_MODEL"))
-    result = Agent(model=model, callback_handler=None)("Reply with the single word: ready")
-    return f"reply_chars={len(str(result))}"
+class JevSmokeAnswer(BaseModel):
+    asks_for_deletion: dict
 
 
 def main() -> int:
+    layer = LLMLayer(ledger_path=None, use_cache=False)
+    calls = {
+        "jev": lambda: layer.call(task="smoke", provider="jev", schema=JevSmokeAnswer, inputs={
+            "state": {"request_text": "Please delete my account."},
+            "questions": {"asks_for_deletion": {"type": "noul",
+                                                "instructions": "Does `request_text` ask to delete personal data?"}}}),
+        "azure": lambda: layer.call(task="smoke", provider="azure", schema=DeletionRequestedAnswer, inputs={
+            "prompt": "Request: 'Please delete my account.' Does it ask for deletion?"}),
+        "gemini": lambda: layer.call(task="smoke", provider="gemini", schema=DeletionRequestedAnswer, inputs={
+            "prompt": "Request: 'Please delete my account.' Does it ask for deletion?"}),
+    }
     failures = 0
-    for provider_name, smoke in (("jev", smoke_jev), ("azure", smoke_azure), ("gemini", smoke_gemini)):
+    for provider_name, call in calls.items():
         try:
-            detail = smoke()
-            print(f"{provider_name}: OK {detail}")
-        except Exception as error:  # report the class only; messages may echo endpoints
+            call()
+            row = layer.ledger.rows[-1]
+            print(f"{provider_name}: OK model={row['model']} tokens={row['input_tokens']}+{row['output_tokens']}")
+        except Exception as error:   # class only: messages may echo endpoints
             failures += 1
             print(f"{provider_name}: FAIL {type(error).__name__}")
     return 1 if failures else 0

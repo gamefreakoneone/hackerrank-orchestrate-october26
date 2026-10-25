@@ -18,8 +18,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0004 | Completed | `84bbd03` | 13 tests; validator clean on sample_output.csv |
 | 0005 | Completed | `4f192d3` | baseline recorded |
 | 0006 | Completed | `b22c8d9` | 518/518 resolved, 100 historical request emails |
-| 0007 | Completed | pending `spec 0007: evidence parsers, coverage and index` | 3012 observations, 472 coverage rows |
-| 0008–0016 | Not started | — | |
+| 0007 | Completed | `2cb0e29` | 3012 observations, 472 coverage rows |
+| 0008 | Completed | pending `spec 0008: shared LLM layer with cache, repair retry and usage ledger` | live: jev, azure, gemini OK |
+| 0009–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -37,9 +38,9 @@ not committed). No audited output exists.
 
 | Provider | Live smoke (spec 0001) | Pipeline use |
 |---|---|---|
-| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK | not wired yet |
-| Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK`) | OK (needs `reasoning_effort=none` for function tools) | not wired yet |
-| Gemini via Strands (`GEMINI_VISION_MODEL`) | OK (text call) | not wired yet |
+| Jev (TypeSafe, `JEV_MODEL=jev-latest` → served `jev-1.14.0`) | OK (also via shared layer, 0008) | not wired yet |
+| Azure OpenAI via Strands (`AZURE_DEPLOYMENT_FALLBACK` = gpt-6-luna) | OK (needs `reasoning_effort=none` for function tools; temperature 0 accepted) | not wired yet |
+| Gemini via Strands (`GEMINI_VISION_MODEL` = gemini-3.8-flash) | OK (structured output, temperature 0) | not wired yet |
 
 ## Observed failure patterns
 
@@ -53,9 +54,10 @@ _none recorded yet_
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0008.
+- Continue with spec 0009.
+- Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `b22c8d9` (spec 0006).
+Last published checkpoint: `2cb0e29` (spec 0007).

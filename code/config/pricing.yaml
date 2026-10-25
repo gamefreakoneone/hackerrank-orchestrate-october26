@@ -1,0 +1,3 @@
+# USD per 1M tokens, keyed by served model id. null = price not established; the usage report then shows the
+# cost as unavailable instead of inventing one. Fill in from the provider's published price list.
+models: {}

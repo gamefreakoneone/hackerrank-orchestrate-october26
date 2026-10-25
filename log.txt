@@ -1228,3 +1228,23 @@ branch=claude/nifty-tesla-4ig5f5
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T08:12:35Z] spec 0008 completed (autonomous continuation)
+
+Continuation of the overnight kickoff prompt logged at 2026-10-25T07:51Z (not a new user message).
+
+Agent Response Summary:
+Spec 0008 completed: ghostaudit/llm/{providers,jev,hardening,cache,ledger}.py implement the shared structured-call layer (cache keyed by task/provider/model/schema/inputs/images, pydantic validation, one repair retry, LLMError/LLMUnavailable, JSONL usage ledger with per-model summaries; cost stays None when no price is configured). Jev uses typesafe-sdk Choice/Noul questions; Azure and Gemini use Strands structured output (Azure with reasoning_effort=none). Fake-provider tests pass (7), the opt-in live test and the smoke tool (now routed through the layer) succeed for jev-1.14.0, gpt-6-luna and gemini-3.8-flash.
+
+Actions:
+* Wrote code/ghostaudit/llm/*.py, code/config/{models,pricing}.yaml, code/tests/test_llm_{layer,live}.py; rewrote code/tools/smoke_providers.py on the layer
+* Ran pytest test_llm_* (7 passed, 1 skipped), RUN_LIVE=1 live test (1 passed), smoke_providers.py (3/3 OK), run_eval.py --split dev, full suite (58 passed)
+* Updated spec 0008 status/tasks, FEATURE_STATUS.md, MORNING_REPORT.md
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/nifty-tesla-4ig5f5
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

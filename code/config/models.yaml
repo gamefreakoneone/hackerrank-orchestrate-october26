@@ -1,0 +1,16 @@
+# Model routing. Model ids come from environment variables; no secrets here.
+providers:
+  jev:
+    model_env: JEV_MODEL
+  azure:
+    model_env: AZURE_DEPLOYMENT_FALLBACK
+    # the deployment rejects function tools (Strands structured output) while reasoning is enabled
+    params: {reasoning_effort: none, temperature: 0}
+  gemini:
+    model_env: GEMINI_VISION_MODEL
+    params: {temperature: 0}
+tasks:
+  intent: jev
+  intent_adjudication: azure
+  vision_extract: gemini
+  category_fallback: jev
