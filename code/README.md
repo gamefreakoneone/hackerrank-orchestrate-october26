@@ -27,11 +27,28 @@ python code/main.py                                  # all 518 requests -> ./out
 python code/main.py --cases sample --out runs/sample.csv
 ```
 
-Flags: `--cases sample|all`, `--out PATH`, `--offline`, `--no-cache`, `--case case_NN ...`.
+Flags: `--cases sample|all`, `--out PATH`, `--offline` (cache-only model calls; keyword intent marked provisional),
+`--no-cache` (skip cache reads: cold run), `--case case_NN ...` (subset, skips the full-file validator),
+`--data-root DIR` (alternative dataset directory, used by the custom evaluation overlays).
+
+Each run also writes `<out>.diagnostics.jsonl` (per-case flags, account link, obligations), a usage ledger
+`runs/usage_<run_id>.jsonl` and a manifest `runs/<run_id>.manifest.json` (git revision, output checksum).
+
+## Evaluate
+
+```bash
+python code/evaluation/run_eval.py --split dev        # samples: run + score (regression set, not a holdout)
+python code/evaluation/score.py runs/sample.csv dataset/sample_output.csv --split all
+python code/evaluation/run_custom.py                  # synthetic custom cases (overlay on a temp dataset copy)
+python code/tools/discovery_report.py --split all     # discovery + account linkage vs samples
+python code/tools/state_report.py                     # reconstructed state/proof vs samples
+python code/tools/intent_report.py runs/all.diagnostics.jsonl
+python -c "import sys;sys.path.insert(0,'code');from ghostaudit.validate import cli;cli()"   # validate ./output.csv
+```
 
 ## Test
 
 ```bash
-python -m pytest code/tests -q
+python -m pytest code/tests -q                      # offline; RUN_LIVE=1 enables the live-model tests
 python code/tools/smoke_providers.py   # one live call per provider; prints OK/FAIL only
 ```

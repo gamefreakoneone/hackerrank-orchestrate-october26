@@ -1,6 +1,6 @@
 """Deletion-audit agent entry point.
 
-python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [--case case_NN ...]
+python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [--case case_NN ...] [--data-root DIR]
 """
 from __future__ import annotations
 
@@ -33,6 +33,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--offline", action="store_true", help="cache-only LLM calls, deterministic fallbacks")
     parser.add_argument("--no-cache", action="store_true", help="skip LLM cache reads (cold run)")
     parser.add_argument("--case", nargs="*", default=None, help="restrict to these case_ids")
+    parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "dataset",
+                        help="dataset directory (custom evaluation overlays use a temporary copy)")
     return parser.parse_args(argv)
 
 
@@ -49,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     run_id = f"{args.out.stem}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     runs_dir = REPO_ROOT / "runs"
     usage_path = runs_dir / f"usage_{run_id}.jsonl"
-    dataset = load_dataset(REPO_ROOT / "dataset", sample=args.cases == "sample")
+    dataset = load_dataset(args.data_root, sample=args.cases == "sample")
     llm = LLMLayer(ledger_path=usage_path, offline=args.offline, use_cache=not args.no_cache)
     ledger = build_ledger(dataset, extra=vision_observations(dataset, layer=llm))
     ctx = Context(dataset, ledger, llm=llm)

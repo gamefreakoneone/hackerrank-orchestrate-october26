@@ -24,8 +24,9 @@ No time, call or spend limit was configured by the user or platform; none is ass
 | 0010 | Completed (recall target not met, contract-bound) | `f63f611` | linkage 12/32 (0 wrong); 167/518 grounded |
 | 0011 | Completed | `ef07015` | 77/77 discovered gold obligations correct |
 | 0012 | Completed | `14df3a9` | dev status 0.750, F1 0.904 |
-| 0013 | Completed | pending `spec 0013: multilingual intent gate` | 508 deletion / 10 non-deletion; 32/32 samples deletion |
-| 0014–0016 | Not started | — | |
+| 0013 | Completed | `0623153` | 508 deletion / 10 non-deletion; 32/32 samples deletion |
+| 0014 | Completed | `d33daa7` (expected outputs, before running) + pending `spec 0014: custom cases, overlay runner and metamorphic tests` | 9/9 custom requests pass; 4 metamorphic tests |
+| 0015–0016 | Not started | — | |
 
 ## Metrics (32 samples — an inspected regression set, not a holdout)
 
@@ -69,10 +70,10 @@ cold-cache final run required by spec 0015.
 
 ## Remaining blockers / next actions
 
-- Continue with spec 0014.
+- Continue with spec 0015 (cold-cache final run, ablations, reports).
 - Pricing for the three models is not established (`code/config/pricing.yaml` empty); usage report must source prices or say cost is unavailable.
 
 ## Submission checklist / trace
 
 See `code/docs/SUBMISSION_CHECKLIST.md`. Trace: `agent-trace/claude-code/<session>.jsonl`, refreshed before each commit.
-Last published checkpoint: `14df3a9` (spec 0012).
+Last published checkpoint: `d33daa7` (spec 0014 expected outputs).
