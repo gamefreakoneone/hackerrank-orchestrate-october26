@@ -131,3 +131,19 @@ for cid, (st, steps) in sorted(gold().items()):
     order = sorted(ranked, key=lambda a: (not claimed_by_me(a), abs((ts(a["event_time"]) - rep).total_seconds()), a["resource_id"]))
     E["ok" if order and order[0]["resource_id"] == ga else "none" if not order else "wrong"] += 1
 print("E claim-aware ranking on ambiguous cases:", dict(E))
+
+# --- F (phase 0c): linkage accuracy reported separately from status, and the cost of requiring a grounded link
+# for COMPLETE. Grounded = unique reference link. Multi-reference = every linked account is grounded to the subject,
+# but choosing one of them by timing is not; 0c plans all grounded accounts as obligations instead.
+F = Counter()
+for cid, st, ga, how, choice, ncand in rows:
+    F[f"link:{how}:{'ok' if choice == ga else 'wrong'}"] += 1
+    if how != "ref_link" and how != "ref_link_multi" and st == "COMPLETE":
+        F["gold_COMPLETE_without_grounded_link (would become INCOMPLETE)"] += 1
+for cid, (st, steps) in sorted(gold().items()):
+    uid, vals, src = discover(req[cid])
+    linked = sorted(x for x, v in src.items() if x.startswith("account_") and v - {"EXP"})
+    if len(linked) > 1:
+        print("F multi-reference case:", cid, st, "linked:", linked,
+              "gold:", [s["resource_id"] for s in steps if s["system_id"] == "account_service"])
+print("F linkage:", dict(sorted(F.items())))

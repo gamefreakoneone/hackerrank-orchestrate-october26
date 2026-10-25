@@ -9,10 +9,13 @@ Final cold-cache full run, ablations, and the two required evaluation reports.
 ## Requirements / acceptance criteria
 
 - Cold-cache run (`--no-cache`) over 518 cases writes root `output.csv`; validator clean.
-- Ablations on samples: deterministic-only (`--offline`, no LLM), no historical identifiers, trust activity claims.
+- Ablations on samples: deterministic-only (`--offline`, no LLM), no historical identifiers, trust activity claims,
+  `--ungrounded-account-steps ranked` (emit the top-ranked account in INCOMPLETE output; report its linkage and step
+  effects — never allowed to produce COMPLETE).
 - `code/evaluation/evaluation_report.md`: status accuracy, step- and field-level accuracy, sequence accuracy
-  (exact + LCS) on the 32 samples labelled as a **regression set** (dev/holdout both inspected in Phase 0); held-out
-  evidence = synthetic cases + metamorphic tests; completion-blocker and activity-citation counts; failures found
+  (exact + LCS) on the 32 samples labelled as a **regression set** (dev/holdout both inspected in Phase 0); account
+  linkage accuracy as its own row; custom and metamorphic validation results (not a holdout); blocker counts;
+  failures found
   and improvements made (commit refs, before/after numbers from each spec's status.md), ablation table.
 - `code/evaluation/usage_report.md` from the final run's ledger: providers, models, calls, input/output tokens,
   total and average tokens per request, estimated cost total and per request, per model and overall.

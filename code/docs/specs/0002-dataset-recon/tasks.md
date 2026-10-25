@@ -12,5 +12,5 @@
 ```bash
 python code/recon.py
 python code/trace_gold.py
-cd code/tools && python p0_q2_evidence_selection.py && python p0_q2b_coverage.py | head -30 && python p0_q3_discovery.py | tail -1 && python p0_q3c_account_link.py | tail -1 && python p0_q1_q5_categories.py
+cd code/tools && python p0_q2_evidence_selection.py && python p0_q2b_coverage.py && python p0_q6_identity_cutoff.py && python p0_q3_discovery.py | tail -1 && python p0_q3c_account_link.py | tail -1 && python p0_q1_q5_categories.py
 ```

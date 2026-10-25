@@ -26,11 +26,13 @@ dataset/evidence ─► parsers (once per file, cached by sha256 + parser versio
     └─► Observation ledger + inverted index (identifier → obs, resource_id → obs)
 per case:
   1 intent gate ─ not deletion → NOT_APPLICABLE, []
-  2 identity resolver: identifier set as of audit_at (later audit changes reverted)
+  2 identity resolver: current snapshot + audit rows with event_time ≤ audit_at (post-cutoff rows never read)
   3 discovery: exact identifier-linked records (≤ audit_at) → fixed-point expansion
-              + subject-level account link (§5 Q3): reference links first, workflow timing only ranks
+              + subject-level account link (§5 Q3): grounded reference links; workflow timing only ranks
+                ungrounded candidates (diagnostics), never grounds them
   4 state @ audit_at per resource: latest establishing observation or SnapshotCoverage (file captured_at ≤ audit_at);
-    nothing establishes it ⇒ UNKNOWN
+    state-check activity (CHECK_DATA_FLOW / CHECK_RESTORE_ACCESS) only if no file establishes it;
+    operational claims (DELETE_RECORD SUCCESS, …) never set state; nothing establishes it ⇒ UNKNOWN
   5 policy → obligations (required end state; rule conditions TRUE/FALSE/UNKNOWN)
   6 status = no completion blocker ∧ ≥1 obligation ∧ all satisfied ? COMPLETE : INCOMPLETE (§3.5)
   7 planner: findings + remediation (INCOMPLETE) + verification for every obligation
@@ -131,7 +133,8 @@ class Obligation(BaseModel, frozen=True):
     required: Literal["ABSENT", "REDACTED", "ANONYMIZED", "PRESENT", "DISABLED", "BLOCKED"]
     current: Literal["PRESENT", "EXPOSED", "ACTIVE", "ABSENT", "REDACTED", "ANONYMIZED",
                      "DISABLED", "BLOCKED", "UNKNOWN"]
-    condition: Literal["TRUE", "FALSE", "UNKNOWN"]  # rule condition at audit_at; UNKNOWN ⇒ default branch, flagged
+    condition: Literal["TRUE", "FALSE", "UNKNOWN"]  # rule condition at audit_at; UNKNOWN ⇒ default branch, flagged;
+                                      # FALSE ⇒ no rule-defined action ⇒ POLICY_UNDEFINED blocker (§3.5)
     proof: str                        # establishing file_id (preferred) or activity_id/audit_id fallback, or ""
     proof_kind: Literal["file", "activity", "audit", ""]
     satisfied: bool                   # False whenever current == "UNKNOWN"
@@ -159,21 +162,27 @@ proof. Exact output per flag (written to `runs/<run>/diagnostics.jsonl`, counted
 
 | Flag | When | Status | Steps |
 |---|---|---|---|
-| `UNRESOLVED_ACCOUNT` | no reference link and no unowned workflow candidate | INCOMPLETE | no account steps (no resource_id to name); other obligations planned normally |
-| `ACCOUNT_LINK_DEFAULT` | account chosen by the workflow-timing default (§5 Q3) | not a blocker | planned normally (COMPLETE still needs proof of the account's state) |
-| `UNKNOWN_STATE` | no eligible file / coverage / activity establishes the state | INCOMPLETE | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
-| `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE | `[]` |
-| `CONDITION_DEFAULTED` | rule condition has no field (UNKNOWN) | not a blocker | default branch |
-| `ACTIVITY_CITATION` | proof is an activity_id / audit_id | not a blocker | cited as is |
+| `ACCOUNT_UNGROUNDED` | no grounded subject→account link (§5 Q3); covers "no candidate at all" | INCOMPLETE (blocker) | **no account steps**; ranked candidates go to diagnostics only (ablation `--ungrounded-account-steps ranked` in 0015 measures emitting the top candidate instead) |
+| `ACCOUNT_MULTI_GROUNDED` | >1 grounded account | not a blocker | most recent grounded link is the account; the others are listed in diagnostics |
+| `UNKNOWN_STATE` | no eligible file / coverage / state-check activity establishes the state | INCOMPLETE (blocker) | no finding, no remediation for it; VERIFICATION step (required end state) with `""` |
+| `POLICY_UNDEFINED` | a rule condition evaluates FALSE (the rules define no action for that branch) | INCOMPLETE (blocker) | no step for that resource; flagged for review — code does not invent an action |
+| `EMPTY_OBLIGATIONS` | deletion authorized but nothing discovered | INCOMPLETE (blocker) | `[]` |
+| `CONDITION_DEFAULTED` | rule condition has no field (UNKNOWN) | not a blocker | default (rule's stated) branch |
+| `ACTIVITY_CITATION` | proof is a state-check activity_id / audit_id | not a blocker | cited as is |
+| `IDENTITY_SNAPSHOT_AFTER_CUTOFF` | subject's identity snapshot updated_at > audit_at | not a blocker | identifiers from pre-cutoff audit rows + snapshot; flagged (0 occurrences in data) |
 
-No finding or evidence is ever invented to fill a blocker. The validator downgrades "INCOMPLETE without
-findings" from error to warning only when a blocker flag is present.
+No finding, account or evidence is ever invented to fill a blocker. Proving an account deleted does not prove it
+is the subject's account, so a ranked (ungrounded) account can never support COMPLETE. The validator accepts
+"INCOMPLETE without findings" and "INCOMPLETE with `[]`" only when a blocker flag is present (warning); `[]`
+otherwise requires NOT_APPLICABLE.
 
-Phase-0b measurement on samples (`p0_q3c_account_link.py` §C, gold as oracle): 0 `UNRESOLVED_ACCOUNT`;
-`ACCOUNT_LINK_DEFAULT` on 20/32 cases (9 COMPLETE: 2 right account; 11 INCOMPLETE: 6 right). Treating the
-default as a blocker would turn 9/10 COMPLETE samples INCOMPLETE, so it is a flag, not a blocker.
-`UNKNOWN_STATE` over gold resources: 8/111 (all retained audit records in INCOMPLETE cases, plus account_004 in
-COMPLETE case_04, which is a linking miss rather than a state gap since evidence_54 covers it).
+Phase-0c measurement on samples (`p0_q3c_account_link.py` §F, gold as oracle). **Linkage accuracy is reported
+separately from status accuracy:** grounded links 12/32 (11 unique, 1 multi-grounded resolved by most-recent link),
+0 wrong; ungrounded 20/32 (the top-ranked candidate would be right 8/20, wrong 12/20 = 60% of ambiguous cases,
+37.5% of all samples). Cost of the grounding requirement: 9 of 10 gold-COMPLETE samples have no grounded link and
+become INCOMPLETE, so sample status accuracy is capped at 23/32 until spec 0010 grounds more accounts. We accept
+that cost rather than claim COMPLETE on an unproven identity link. `UNKNOWN_STATE` over gold resources: 8/111
+(7 retained audit records in INCOMPLETE cases; account_004 in case_04 is a linking gap, since evidence_54 covers it).
 
 ### 3.6 Provider interface — `ghostaudit/llm/`
 
@@ -211,13 +220,17 @@ As HANDOFF §5, plus `code/tools/` (Phase-0 analysis scripts `p0_*.py`, provider
 Scripts: `code/tools/p0_q2_evidence_selection.py`, `p0_q2b_coverage.py`, `p0_q3_discovery.py`,
 `p0_q3c_account_link.py`, `p0_q1_q5_categories.py`. All numbers are on the 32 samples (111 gold resources,
 75 cited steps). Phase 0b (after the Codex review `code/docs/reviews/0000b-codex-phase0-review.md`) made every
-measurement cutoff-safe (files by manifest captured_at, activity and audit rows by event_time, all ≤ audit_at;
-identity values as of audit_at) and replaced substring matching with exact identifier matching.
+measurement cutoff-safe (files by manifest captured_at, activity and audit rows by event_time, all ≤ audit_at)
+and replaced substring matching with exact identifier matching. Phase 0c (after a second review of `d440ced`)
+made identity strict (post-cutoff audit rows are never read), replaced the unreproducible absence rule with an
+executable check, required grounded account links for COMPLETE, and corrected the policy and evaluation wording.
 
 **Evaluation honesty.** Every sample answer was inspected to make these decisions, so the 32 samples (and any
-dev/holdout split of them) are a **regression set**, not untouched validation. Held-out evidence comes from
-synthetic cases and metamorphic tests (spec 0014). All rules below are fitted to samples; small counts (e.g.
-4/4) are hypotheses that the full run must keep checking via diagnostics.
+dev/holdout split of them) are a **regression set**, not untouched validation. Spec 0014's synthetic cases and
+metamorphic tests are **custom and metamorphic validation**: they are designed around known risks and will be
+used to fix the system, so they are not a holdout either. No untouched holdout exists; reports must say so. All
+rules below are fitted to samples; small counts (e.g. 4/4) are hypotheses that the full run keeps checking via
+diagnostics.
 
 ### Q1 — Where does `data_category` come from?
 
@@ -259,19 +272,27 @@ Explicit fields first, then container names, then log event names; LLM only as f
 - **Citation rule = latest eligible file that ESTABLISHES the required state for that system**
   (`p0_q2b_coverage.py`, 4/4 omission citations):
   1. observed state: latest eligible observation of the resource showing the state (the 71/71 rule);
-  2. absence by omission: eligible `SnapshotCoverage` of the system, captured **after the resource's last
-     DELETE_RECORD activity** (if any), not containing the resource; prefer the snapshot covering **more physical
-     copies**, then the latest.
-  - case_04 (audit 09-07, no deletion activity): `evidence_54` (09-02, primary **and** failover replica) beats the
-    newer `evidence_90` (09-05, inventory scoped to account_service, primary `customer_profiles` only, 0 rows).
-    A primary-only snapshot cannot establish absence across replicas — case_05 shows exactly this drift (primary
-    empty, failover replica still holds account_005). Same choice for case_01/02 (evidence_10 is older and also
-    two copies).
-  - case_31 (audit 09-15, account_4857 deleted 09-06): `evidence_54` and `evidence_90` predate the deletion, so they
-    cannot prove it; of `evidence_07` (09-13) and `evidence_51` (09-15) the latest is cited.
-  3. fallback when no file establishes the state: an `activity_id`/`audit_id` ≤ audit_at whose content states the
-     result (the participant contract allows these citations; samples never needed them), flagged
-     `ACTIVITY_CITATION`.
+  2. absence by omission (`p0_q2b_coverage.py`, executable, asserts the chosen rule): candidates are eligible
+     `SnapshotCoverage` rows of the system that do not contain the resource. Definitions: **scope** = the
+     system's profile table/collection in that file; **observation time** = manifest captured_at; **replica
+     coverage** = the file covers ≥1 non-primary physical copy (failover/read/reporting/regional replica);
+     **superseded** = captured at or before the resource's last DELETE_RECORD activity ≤ audit_at (cannot prove the
+     deletion took effect). Rule: drop superseded candidates; among the rest take the **latest with replica
+     coverage**, else the latest. Results of every rule tried (4 omission citations):
+     latest 3/4 (case_04 → evidence_90); latest-after-delete 3/4; the 0b "most copies, then latest" claim **3/4**
+     (case_04 → evidence_29, three copies on 05-19 — the 0b 4/4 claim did not reproduce because the old script
+     printed only the latest four candidates); latest-with-replica-after-delete **4/4**. The last was chosen
+     **post hoc** on these 4 points; rationale: case_05 shows replica drift (primary empty, failover replica
+     holds the account), so a primary-only snapshot (evidence_90) cannot establish absence when a replica-covering
+     snapshot exists; case_31's account was deleted 09-06, superseding evidence_54/evidence_90, and no later
+     snapshot covers a replica, so the latest (evidence_51, empty collection) is cited. Treat as a hypothesis.
+  3. fallback when no file establishes the state: a **state-check** activity ≤ audit_at — `CHECK_DATA_FLOW`
+     ("confirmed that data flow X remains enabled") or `CHECK_RESTORE_ACCESS` ("confirmed that archive X can still
+     be restored") — or an `audit_id` for an identity value, flagged `ACTIVITY_CITATION`. Operational claims
+     (DELETE/REDACT/ANONYMIZE/BLOCK_RESTORE/DISABLE_DATA_FLOW/RETAIN/SYNC/INDEX/UPDATE/CREATE_EXPORT/SEND_EMAIL/
+     REFRESH_CACHE/CLASSIFY_REQUEST/RESTORE_BACKUP results) are **claims**: they add candidates and risks
+     (RESTORE_BACKUP names a repopulated resource) but never establish a state and are never cited as proof.
+     The participant contract allows activity/audit citations; samples never needed them.
 - Cutoff is by file `captured_at`, not line timestamps: `evidence_06` (captured 2026-09-18) has lines dated
   2026-09-16 that would prove case_09 facts, and gold does not use it.
 
@@ -291,12 +312,17 @@ names and phones must not be embedded in a longer word/number.
   - A. Phase-0 heuristic re-run cutoff-safe (window upper bound `min(audit_at, reported_at + 15 min)`):
     identifier-owned correct **12/32** (was 15/32 with future leakage; lost case_09, case_26, case_27), unique
     unowned 2, ambiguous 18. (The review measured 12 / 1 / 19 with substring matching.)
-  - B. Subject-level linking, reference links first (pre-deletion rows, customer/subject_reference, LINK activity,
-    trace groups, all ≤ audit_at): **12/32 resolved, 0 wrong**. For the other 20, workflow candidates not linked
-    to another user, ranked; defaults measured on those 20: nearest to reported_at **8**, latest before reported_at
-    5, earliest after request 2, unique-candidate-only 2 (18 none), claim-aware nearest (prefer activities this
-    request is the closest request to) 8. **Default = nearest to reported_at, flagged `ACCOUNT_LINK_DEFAULT`.**
-    Overall account correct 20/32; 0 unresolved.
+  - B. Subject-level linking. **Grounded** = a subject identifier and the account id in one record ≤ audit_at
+    (pre-deletion rows, customer/subject_reference, LINK_RESOURCE_IDENTITY, readback trace groups). Grounded:
+    **11** unique + **1** multi-grounded (case_17: account_6523 from a 03-10 readback 404, account_4092 from a
+    09-15 readback; the most recent grounded link picks the gold account — one data point), **0 wrong**.
+    **Ungrounded: 20/32.** Workflow candidates (DELETE_RECORD → account_service in the request window, not linked
+    to another user) are only ranked: nearest to reported_at 8/20, claim-aware nearest 8/20, latest before
+    reported_at 5/20, earliest after request 2/20, unique-candidate-only 2/20. The best ranking is wrong on 12/20
+    (60%) ambiguous cases, 37.5% of all samples, and 7 of the 9 gold-COMPLETE cases that would rely on it get the
+    wrong account id. **Decision (0c): a ranked candidate never grounds the subject's account**; it is reported in
+    diagnostics and the case carries the `ACCOUNT_UNGROUNDED` blocker (§3.5). Linkage accuracy is a separate
+    metric from status accuracy in every report. Raising grounded linkage above 12/32 is spec 0010's main goal.
   - No one-to-one constraint: unique account ownership does not imply unique request ownership. The evaluation
     set has **1 subject with 2 requests (case_33, case_52)**; linking is per subject, with per-request cutoffs.
   - Tombstones carry `subject_reference` (user_id) but no account id: they confirm the subject, not the account.
@@ -322,10 +348,15 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 - `retention_until`: 4 distinct values, 2031-12-31 … 2034-09-30, all later than every audit_at (max 2026-10-01).
 - No shared-attachment / other-customer / hold-released signals in any file.
 - Legal holds exist (`legal_hold_*`, 7 files, `retained_order_records`) but none in sample gold.
-- ⇒ Conditions are **tri-state** (TRUE / FALSE / UNKNOWN). Where a field exists (retention_until, hold status /
-  register entry, restore_allowed) it is evaluated at audit_at and a FALSE result switches the branch (e.g.
-  expired retention ⇒ DELETE). Where no field exists ⇒ UNKNOWN ⇒ default branch, flagged `CONDITION_DEFAULTED`.
-  Not observing a FALSE in samples is not a reason to ignore it; synthetic cases (0014) cover the FALSE branches.
+- ⇒ Conditions are **tri-state** (TRUE / FALSE / UNKNOWN), evaluated at audit_at where a field exists:
+  SECURITY_AUDIT_LOG `retention_until ≥ audit_at`; LEGAL_HOLD_RECORD hold active per the register / hold fields.
+  TRUE ⇒ the rule's action. UNKNOWN (no field) ⇒ the rule's action, flagged `CONDITION_DEFAULTED`. **FALSE ⇒ the
+  supplied rules define no action** (they state conditional RETAIN/REDACT/… only), so code does **not** infer an
+  inverse such as DELETE: the resource gets the `POLICY_UNDEFINED` blocker and no step (§3.5). 0c correction of 0b,
+  which had assumed expired retention ⇒ DELETE.
+- BACKUP_ARCHIVE "restore access can be blocked": `restore_allowed=false` is the resource **state** BLOCKED
+  (obligation satisfied), not the condition. The condition is FALSE only with explicit evidence that blocking is
+  impossible (none seen); otherwise UNKNOWN ⇒ default (RETAIN with restore blocked).
 
 ### Other facts carried from DATA_NOTES / GOLD_TRACE
 
@@ -348,10 +379,17 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | ~~Account resolution via global request↔workflow-activity assignment~~ (superseded in 0b) | Q3c: identifiers resolve only 15/32 (number later found to leak future evidence) |
 | 2026-10-25 | ~~Only default rule branches implemented~~ (superseded in 0b) | Q5: no condition failures in data |
 | 2026-10-25 | Phase-0 scripts live in `code/tools/p0_*.py`; recon/trace scripts moved to `code/` | HANDOFF Phase 0 step 6 |
-| 2026-10-25 | **0b** Measurements cutoff-safe on files, activity and audit rows; exact identifier matching | Codex review finding 1: account baseline leaked future evidence (15→12/32); substring `hit()` |
-| 2026-10-25 | **0b** Subject-level account linking: reference links first, workflow timing only ranks; default = nearest to reported_at, flagged | Codex finding 2: repeated requests (case_33/case_52); 0b measurement 12/32 ref links, default 8/20 |
-| 2026-10-25 | **0b** `SnapshotCoverage` contract separate from `Observation`; cite the latest file that establishes the state (post-deletion, most physical copies, latest) | Codex finding 3: empty collection in evidence_51; case_04 cites evidence_54 not evidence_90 |
+| 2026-10-25 | **0b** Measurements cutoff-safe on files, activity and audit rows; exact identifier matching *(partly superseded by 0c)* | Codex review finding 1: account baseline leaked future evidence (15→12/32); substring `hit()` |
+| 2026-10-25 | **0b** Subject-level account linking: reference links first, workflow timing only ranks; default = nearest to reported_at, flagged *(partly superseded by 0c)* | Codex finding 2: repeated requests (case_33/case_52); 0b measurement 12/32 ref links, default 8/20 |
+| 2026-10-25 | **0b** `SnapshotCoverage` contract separate from `Observation`; cite the latest file that establishes the state (post-deletion, most physical copies, latest) *(partly superseded by 0c)* | Codex finding 3: empty collection in evidence_51; case_04 cites evidence_54 not evidence_90 |
 | 2026-10-25 | **0b** Completion blockers with exact output (§3.5); never COMPLETE silently | Codex finding 4 |
 | 2026-10-25 | **0b** Activity/audit citations allowed as a flagged fallback; policy conditions tri-state | Codex finding 5; participant contract allows these citations |
 | 2026-10-25 | **0b** 8 "unreachable" resources measured without PNGs; spec 0009 checks evidence_37 / evidence_42 | Codex verification note |
-| 2026-10-25 | **0b** Samples are a regression set; synthetic + metamorphic cases are the held-out evidence; scorer tables added to 0005 and 0008 | Codex evaluation corrections |
+| 2026-10-25 | **0b** Samples are a regression set; synthetic + metamorphic cases are the held-out evidence; scorer tables added to 0005 and 0008 *(partly superseded by 0c)* | Codex evaluation corrections |
+| 2026-10-25 | **0c** Identity is strict: post-cutoff audit rows never read | Second review: 0b reverted later changes using post-cutoff rows; `p0_q6_identity_cutoff.py`: 0/550 requests have post-cutoff identity rows or snapshot updates, so strict = revert on this data |
+| 2026-10-25 | **0c** Absence rule = superseded-filter, then latest with replica coverage, else latest; executable assertion; labelled post hoc | Second review: 0b "most copies" rule reproduces 3/4 (case_04 → evidence_29) |
+| 2026-10-25 | **0c** Ranked (ungrounded) accounts never support COMPLETE (`ACCOUNT_UNGROUNDED` blocker); linkage accuracy reported separately | Second review: default wrong on 12/20; caps sample status at 23/32 until linking improves |
+| 2026-10-25 | **0c** Only state-check activity (CHECK_DATA_FLOW / CHECK_RESTORE_ACCESS) can establish state; operational claims never | Second review: 0010 vs 0012 contradiction |
+| 2026-10-25 | **0c** Validator: `[]` ⇔ NOT_APPLICABLE, except INCOMPLETE `[]` with a blocker flag | Second review: 0004 vs 0012 contradiction |
+| 2026-10-25 | **0c** FALSE policy condition ⇒ `POLICY_UNDEFINED` blocker, no inferred inverse action | Second review: rules do not define inverse branches |
+| 2026-10-25 | **0c** Synthetic + metamorphic cases are custom validation, not a holdout | Second review |

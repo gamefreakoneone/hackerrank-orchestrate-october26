@@ -29,6 +29,9 @@ spec whose dependencies are not `Completed`.
   cutoff-safe exact baselines, subject-level account linking (no one-to-one assignment), `SnapshotCoverage`,
   completion blockers, activity/audit citation fallback, tri-state policy conditions, PNG checks for the 8
   unreachable resources, samples treated as a regression set, scorer tables in 0005 and 0008.
+- Second review of `d440ced` → Phase 0c: asserted absence rule (0b claim was 3/4), strict identity cutoff,
+  grounded account links required for COMPLETE (`ACCOUNT_UNGROUNDED`), state-check vs operational activity,
+  `[]` validator rule, FALSE conditions ⇒ `POLICY_UNDEFINED` (no inferred inverse), custom validation ≠ holdout.
 
 ## Status definitions
 

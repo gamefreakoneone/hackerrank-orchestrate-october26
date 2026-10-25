@@ -66,8 +66,16 @@ def records(fid):
 RECS = {f: records(f) for f in text}
 
 
-def identity_at(uid, cut):
-    """Identifier values of `uid` valid at or before `cut` (current snapshot with later changes reverted)."""
+MODE = "strict"  # "strict": post-cutoff audit rows are never read; "revert": undo post-cutoff changes (0b)
+
+
+def identity_at(uid, cut, mode=None):
+    """Identifier values of `uid` usable at `cut`.
+
+    strict: current snapshot values + old/new values of audit rows with event_time <= cut (post-cutoff rows unread).
+    revert: current snapshot with post-cutoff changes reverted (reads post-cutoff rows; phase 0b behaviour).
+    """
+    mode = mode or MODE
     u = ids[uid]
     cur = {"email": u["email"], "phone": u["phone"], "email_hash": u["email_hash"]}
     vals = {uid, u["name"]}
@@ -75,7 +83,8 @@ def identity_at(uid, cut):
         if a["user_id"] != uid:
             continue
         if ts(a["event_time"]) > cut:
-            cur[FIELD[a["field_name"]]] = a["old_value"]  # revert a change made after the cutoff
+            if mode == "revert":
+                cur[FIELD[a["field_name"]]] = a["old_value"]  # revert a change made after the cutoff
         else:
             vals |= {a["old_value"], a["new_value"]}
     vals |= set(cur.values())

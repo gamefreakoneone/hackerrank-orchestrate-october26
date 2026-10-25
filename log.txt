@@ -667,3 +667,82 @@ repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
 
+## [2026-10-25T06:55:19Z] SESSION START
+
+tool=Claude Code
+model=claude-opus-5-5
+Repo Root: /home/user/hackerrank-orchestrate-october26
+Branch: claude/eager-cray-7fhtkf
+Worktree: main
+Parent Agent: none
+Language: py
+Time Remaining: not configured
+
+## [2026-10-25T07:02:50Z] Phase 0c: corrections after second review of d440ced
+
+User Prompt (verbatim, secrets redacted):
+This is a substantial improvement, but “all seven points fixed” overstates it. Two central decisions remain unsound, and the claimed 4/4 absence-rule result does not reproduce.
+I reviewed d440ced and reran the analysis scripts. No files changed.
+What genuinely improved
+I confirmed:
+- Discovery still finds 77/111 resources, with extra candidates reduced from 45 to 3.
+- The account heuristic now reports 12 identifier-owned matches, 2 unique unowned matches, and 18 ambiguous cases. The difference from my earlier 12/1/19 result follows the matching changes.
+- SnapshotCoverage now represents empty collections.
+- Mandatory one-to-one assignment is removed.
+- Both missing scorer tables exist.
+- The samples are correctly identified as an already-inspected regression set.
+Those are meaningful fixes.
+What still needs correction
+1. Guessing accounts remains the biggest problem
+The fallback gets 8/20 right and 12/20 wrong. That means 60% of ambiguous accounts are wrong, not 40%. Across all samples, the error rate is 12/32, or 37.5%.
+More concerning: seven of the nine gold-COMPLETE cases using this fallback receive the wrong account ID.
+TECHNICAL_DESIGN.md:172–174 explicitly justifies allowing these guesses to support COMPLETE because blocking them would reduce sample status accuracy. That optimizes the label while weakening the evidence behind it.
+Proving that an account is deleted does not prove that it is this subject’s account. A diagnostics flag cannot supply the missing identity link.
+There is also a smaller reporting issue: the script finds 11 unique reference links, plus one multi-reference case resolved using timing (p0_q3c_account_link.py:65–71). Calling all 12 directly resolved obscures that distinction.
+Correction: Keep candidate ranking, but require grounded subject-to-account linkage before it can support COMPLETE. Report linkage accuracy separately from status accuracy.
+2. The absence-citation rule reproduces only 3/4
+I applied the documented rule literally: eligible snapshot after the last deletion activity, then most distinct physical copies, then latest.
+Case	Rule selects	Sample cites
+case_01	evidence_54	evidence_54
+case_02	evidence_54	evidence_54
+case_04	evidence_29	evidence_54
+case_31	evidence_51	evidence_51
+For case_04, evidence_29 covers three copies, whereas evidence_54 covers two. There is no deletion activity to exclude the older snapshot.
+The supporting script, p0_q2b_coverage.py:54–56, prints only the four latest snapshots. It does not implement or assert the proposed selection rule, and its truncated output hides the older three-copy candidates.
+Correction: Define relevant snapshot scope, observation time, replica coverage, and superseding observations. “More copies” alone is not a sound ordering rule. Add an executable assertion before claiming 4/4.
+3. The updated specs contradict each other
+Two concrete examples:
+- Empty output: spec 0012 permits INCOMPLETE,[], but spec 0004 still requires NOT_APPLICABLE ⇔ []. Those cannot both hold.  
+References: 0012.../requirements.md:15, 0004.../requirements.md:14.
+- Activity evidence: spec 0010 says activity results never set state, while spec 0012 allows activity content stating a result to establish it.  
+References: 0010.../requirements.md:28–30, 0012.../requirements.md:25–26.
+Permitting an activity_id citation does not make every reported result proof.
+Correction: Reconcile the validator rules and explicitly distinguish operational claims from state-establishing observations.
+4. “Cutoff-safe” still needs qualification
+p0_q3_discovery.py:74–78 reads post-cutoff audit rows to undo later identity changes.
+That may reconstruct historically valid values, but it is not the same as using only information available before the cutoff. It conflicts with CLAUDE.md:47 and the unchanged spec 0006 requirement that only pre-cutoff audit rows contribute.
+Correction: Resolve this availability-versus-history distinction explicitly and test whether adding post-cutoff audit information changes earlier answers.
+5. Policy false branches introduce an unsupported assumption
+Spec 0011 now says expired retention or a released hold means DELETE. The supplied rules specify conditional RETAIN actions; they do not explicitly specify those inverse branches.
+That deletion behavior needs justification rather than being treated as established policy. Likewise, restore_allowed=false means restoration is currently prohibited—not that restoration cannot be blocked.
+6. Synthetic tests are not automatically held-out evidence
+Writing expected answers before running the pipeline is good practice. But cases designed around known weaknesses and used for fixes are custom validation tests, not automatically an untouched holdout.
+Call them custom and metamorphic validation unless a genuinely separate, frozen set is reserved from tuning.
+
+Agent Response Summary:
+Phase 0c planning corrections (no feature code). Ranked accounts can no longer support COMPLETE (ACCOUNT_UNGROUNDED blocker, no account steps); linkage accuracy reported separately (grounded 11 unique + 1 multi, 0 wrong; ungrounded 20/32; caps sample status at 23/32). Rewrote p0_q2b_coverage.py to score every rule with an assertion: the 0b rule is 3/4 as the reviewer found; adopted a post-hoc rule (drop snapshots superseded by deletion, latest with replica coverage, else latest) that is 4/4 and labelled as such. Identity is now strict (post-cutoff audit rows never read); p0_q6_identity_cutoff.py shows 0/550 requests affected. Reconciled 0004/0010/0012 (state-check vs operational activity; [] only for NOT_APPLICABLE or blocker-flagged INCOMPLETE), FALSE policy conditions now yield POLICY_UNDEFINED instead of an inferred DELETE, and spec 0014 cases are custom validation, not a holdout.
+
+Actions:
+* git stash / pull --rebase / stash pop; appended SESSION START
+* Rewrote code/tools/p0_q2b_coverage.py; edited p0_q3_discovery.py (strict identity mode), p0_q3c_account_link.py (section F); added p0_q6_identity_cutoff.py; ran all p0 scripts
+* Edited code/docs/TECHNICAL_DESIGN.md; regenerated code/docs/specs/* and FEATURE_STATUS.md
+* Ran scripts/save_trace.sh; git commit "phase 0c: planning corrections after second review"; git push
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/eager-cray-7fhtkf
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none
+

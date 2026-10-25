@@ -15,19 +15,24 @@ Find every resource relevant to the subject and its state at audit_at.
      `subject_reference`, `RESTORE_BACKUP` "repopulated downstream resource X");
   4. account resolution at the **subject (user_id) level** (repeated requests of one subject, e.g. case_33 and
      case_52, share the account link; each request still applies its own cutoff):
-     a. timestamped identity/reference links ≤ audit_at: pre-deletion snapshot rows, `customer_reference` /
-        `subject_reference`, tombstone `subject_reference` (confirms the subject, no account id),
-        LINK_RESOURCE_IDENTITY, readback trace groups. Unique ⇒ resolved (`via=ref_link`); several ⇒ rank by (b).
-     b. otherwise rank workflow candidates — `DELETE_RECORD → account_service` with
-        `requested_at ≤ event_time ≤ min(audit_at, reported_at + 15 min)` not linked to another user by any
-        record ≤ audit_at — by `|event_time − reported_at|`, then resource_id. **Default: take the top candidate,
-        flag `ACCOUNT_LINK_DEFAULT`** in diagnostics (measured: best of 5 rules tried, 8/20 on ambiguous samples).
-     c. no candidate ⇒ flag `UNRESOLVED_ACCOUNT` (completion blocker, spec 0012).
-     There is **no** one-to-one constraint across requests.
-  5. anonymized/deleted analytics in the same workflow burst as the resolved account (fallback, flagged).
+     a. **grounded** links ≤ audit_at: a subject identifier and the account id in one record — pre-deletion
+        snapshot rows, `customer_reference` / `subject_reference`, LINK_RESOURCE_IDENTITY, readback trace groups
+        (tombstone `subject_reference` confirms the subject but names no account). Unique ⇒ `via=grounded`.
+        Several ⇒ the most recent grounded link, flag `ACCOUNT_MULTI_GROUNDED` (case_17: one data point).
+     b. no grounded link ⇒ flag `ACCOUNT_UNGROUNDED` (completion blocker, spec 0012). Workflow candidates —
+        `DELETE_RECORD → account_service` with `requested_at ≤ event_time ≤ min(audit_at, reported_at + 15 min)`
+        not linked to another user ≤ audit_at — are **ranked** by `|event_time − reported_at|` and written to
+        diagnostics only; a ranked candidate never grounds the account (best rule is wrong on 12/20 ambiguous samples).
+     There is **no** one-to-one constraint across requests. Main goal of this spec: raise grounded linkage above
+     12/32 with new grounded sources (PNG rows from 0009, more reference fields), measured as linkage accuracy.
+  5. anonymized/deleted analytics: grounded links only (same rule as accounts); burst co-membership with the
+     account is a ranked hint in diagnostics, not a link.
 - State: for each resource, latest eligible observation by (captured_at, observed_at); any physical copy PRESENT ⇒
-  PRESENT; `coverage=full_table` snapshot without the resource ⇒ ABSENT; activity results never set state, they
-  only add candidates.
+  PRESENT; absence by omission per the `SnapshotCoverage` rule (TECHNICAL_DESIGN §5 Q2). Activity: **operational
+  claims** (DELETE/REDACT/ANONYMIZE/BLOCK_RESTORE/DISABLE_DATA_FLOW/RETAIN/SYNC/INDEX/UPDATE/CREATE_EXPORT/SEND_EMAIL/
+  REFRESH_CACHE/CLASSIFY_REQUEST/RESTORE_BACKUP) never set state — they add candidates and risks only;
+  **state-check events** (CHECK_DATA_FLOW, CHECK_RESTORE_ACCESS) are parsed into observations with
+  `source_kind="activity"` and used only when no file establishes the state.
 - Flows: ACTIVE if latest observation `enabled=true`/heartbeat enabled; backups: RESTORABLE if `restore_allowed`
   true or `eligible=true and deletion_block=false`.
 - Target on samples: resource recall ≥ 85% (text/CSV ceiling 103/111 before PNGs), precision ≥ 80% after policy

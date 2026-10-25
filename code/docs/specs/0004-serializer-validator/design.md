@@ -8,5 +8,6 @@ Contracts: `code/docs/TECHNICAL_DESIGN.md` §3. Data facts: §5.
 - Citation id kinds resolved from `Dataset`: `evidence_files` (captured_at), `activity` (event_time), `audit`
   (event_time). Unknown id ⇒ error.
 - Test fixtures: `sample_output.csv` must validate clean (it is the oracle for format); mutated copies
-  (swap order, wrong state, cite late file, cite late activity_id) must fail with the expected message; a valid
-  pre-cutoff activity_id citation passes.
+  (swap order, wrong state, cite late file, cite late activity_id, cite a DELETE_RECORD activity, INCOMPLETE `[]`
+  without a blocker flag) must fail with the expected message; a pre-cutoff CHECK_DATA_FLOW citation passes, and
+  INCOMPLETE `[]` with `EMPTY_OBLIGATIONS` passes with a warning.

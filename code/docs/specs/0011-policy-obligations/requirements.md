@@ -16,10 +16,13 @@ Turn discovered resources + rules into obligations with satisfied/unsatisfied st
 - REDACTED satisfied iff no subject direct identifier remains in the latest observation; ANONYMIZED iff no subject
   identifier and no `customer_reference`/user_id link remains.
 - Rule conditions are **tri-state** `TRUE / FALSE / UNKNOWN`, evaluated where a field exists:
-  SECURITY_AUDIT_LOG retention → `retention_until ≥ audit_at` (TRUE ⇒ RETAIN/PRESENT; FALSE ⇒ treat as DELETE);
-  LEGAL_HOLD_RECORD → hold active field/register entry at audit_at (FALSE ⇒ DELETE); BACKUP_ARCHIVE → restore can be
-  blocked (FALSE ⇒ flag). No field ⇒ UNKNOWN ⇒ apply the default branch and flag `CONDITION_DEFAULTED` with the rule id.
-  Phase 0 saw no FALSE values (all retention_until 2031–2034), so FALSE branches are tested with synthetic cases (0014).
+  SECURITY_AUDIT_LOG retention → `retention_until ≥ audit_at`; LEGAL_HOLD_RECORD → hold active per register/hold
+  fields at audit_at. TRUE ⇒ the rule's action. UNKNOWN (no field) ⇒ the rule's action + `CONDITION_DEFAULTED`.
+  **FALSE ⇒ the rules define no action** ⇒ `POLICY_UNDEFINED` blocker, no step for that resource; code never infers an
+  inverse action (e.g. DELETE for expired retention).
+- BACKUP_ARCHIVE: `restore_allowed=false` / `deletion_block=true` is the resource **state** BLOCKED (satisfied), not the
+  condition. Condition FALSE only with explicit evidence that blocking is impossible (none seen) ⇒ normally UNKNOWN.
+  Phase 0 saw no FALSE values (all retention_until 2031–2034); FALSE handling is tested with custom cases (0014).
 - Resources with no applicable rule (cache, email_delivery, object, marketing without evidence) are excluded and
   counted in a report.
 
