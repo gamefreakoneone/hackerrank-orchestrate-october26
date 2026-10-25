@@ -118,3 +118,18 @@ def build_ledger(dataset: Dataset, use_cache: bool = True, extra: list[Observati
     ledger.add(extra, [])
     ledger.build_indexes()
     return ledger
+
+
+CLAIM_FIELDS = {"DELETE_RECORD": {"status_code": "404"}, "ANONYMIZE_RECORD": {"result": "ANONYMIZED"},
+                "REDACT_RECORD": {"result": "REDACTED"}, "DISABLE_DATA_FLOW": {"enabled": "false"},
+                "BLOCK_RESTORE": {"restore_allowed": "false"}}
+
+
+def trusted_claim_observations(dataset: Dataset) -> list[Observation]:
+    """Evaluation-only 'trust-claims' ablation: SUCCESS operational claims treated as if they were observations."""
+    from ghostaudit.evidence.derive import make_observation
+    return [make_observation(evidence_id=a.activity_id, captured_at=a.event_time, source_kind="txt",
+                             container="activity_claim", physical_copy="claim", resource_id=a.resource_id,
+                             fields={"event_type": a.event_type, **CLAIM_FIELDS[a.event_type]},
+                             observed_at=a.event_time, system_id=a.target_system)
+            for a in dataset.activity if a.event_type in CLAIM_FIELDS and a.reported_result == "SUCCESS"]

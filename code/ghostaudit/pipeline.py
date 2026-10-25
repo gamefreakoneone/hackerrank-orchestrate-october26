@@ -23,6 +23,7 @@ class Context:
     dataset: Dataset
     ledger: Ledger
     llm: object | None = None                       # LLMLayer; None = no model calls (category fallback skipped)
+    ablations: frozenset[str] = frozenset()         # evaluation only: no-history, ranked-accounts
     deletes: dict[str, list[datetime]] = field(default_factory=dict)
     _owners: dict[datetime, dict] = field(default_factory=dict)
 
@@ -44,6 +45,7 @@ class Assessment:
     policy: PolicyOutcome
     categories: dict[str, str | None]
     category_sources: dict[str, str]
+    guessed_account: str | None = None
 
     @property
     def flags(self) -> list[str]:
@@ -64,15 +66,20 @@ class Assessment:
 
 def assess(request: Request, ctx: Context) -> Assessment:
     dataset, ledger, audit_at = ctx.dataset, ctx.ledger, request.audit_at
-    subject = resolve(request, dataset)
+    subject = resolve(request, dataset, use_history="no-history" not in ctx.ablations)
     discovered = discover(subject, request, dataset, ledger)
     link = link_account(subject, request, discovered, dataset, ledger, ctx.owners(audit_at))
     outcome = PolicyOutcome()
     categories: dict[str, str | None] = {}
     sources: dict[str, str] = {}
     targets: list[tuple[str, str | None]] = []
+    guessed_account = None
     if link.via != "ungrounded":
         targets += [(account, ACCOUNT_SYSTEM) for account in [link.current, *link.historical]]
+    elif "ranked-accounts" in ctx.ablations and link.ranked_candidates:
+        # ablation only: plan the top-ranked (ungrounded) guess; ACCOUNT_UNGROUNDED stays, so never COMPLETE
+        guessed_account = link.ranked_candidates[0]
+        targets.append((guessed_account, ACCOUNT_SYSTEM))
     targets += [(rid, d.system_id) for rid, d in sorted(discovered.items())
                 if d.system_id != ACCOUNT_SYSTEM and d.grounded]
     for resource_id, system_id in targets:
@@ -99,7 +106,7 @@ def assess(request: Request, ctx: Context) -> Assessment:
         outcome.obligations.append(build_obligation(system_id=system_id, resource_id=resource_id, category=category,
                                                     required=required, condition=rule_condition, state=state,
                                                     subject=subject))
-    return Assessment(request, subject, discovered, link, outcome, categories, sources)
+    return Assessment(request, subject, discovered, link, outcome, categories, sources, guessed_account)
 
 
 def classify_request_crosscheck(request: Request, ctx: Context, account_ids: list[str]) -> list[str]:
@@ -127,6 +134,7 @@ def diagnostics_record(assessment: Assessment, status: Status, steps: list[Step]
         "policy_undefined": assessment.policy.policy_undefined,
         "condition_defaulted": assessment.policy.condition_defaulted,
         "step_count": len(steps),
+        "guessed_account": assessment.guessed_account,
     }
 
 

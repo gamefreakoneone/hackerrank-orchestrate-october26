@@ -1,6 +1,7 @@
 """Deletion-audit agent entry point.
 
 python code/main.py [--cases sample|all] [--out PATH] [--offline] [--no-cache] [--case case_NN ...] [--data-root DIR]
+Evaluation-only ablations: [--ablate no-history|trust-claims] [--ungrounded-account-steps ranked]
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ CODE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = CODE_DIR.parent
 sys.path.insert(0, str(CODE_DIR))
 
-from ghostaudit.evidence.index import build_ledger  # noqa: E402
+from ghostaudit.evidence.index import build_ledger, trusted_claim_observations  # noqa: E402
 from ghostaudit.evidence.vision import vision_observations  # noqa: E402
 from ghostaudit.llm.ledger import summarize  # noqa: E402
 from ghostaudit.llm.providers import LLMLayer  # noqa: E402
@@ -35,6 +36,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--case", nargs="*", default=None, help="restrict to these case_ids")
     parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "dataset",
                         help="dataset directory (custom evaluation overlays use a temporary copy)")
+    parser.add_argument("--ablate", action="append", choices=["no-history", "trust-claims"], default=[],
+                        help="evaluation-only ablation; never used for the submitted output")
+    parser.add_argument("--ungrounded-account-steps", choices=["none", "ranked"], default="none",
+                        help="evaluation-only ablation: 'ranked' plans the top-ranked guessed account (INCOMPLETE only)")
     return parser.parse_args(argv)
 
 
@@ -53,8 +58,12 @@ def main(argv: list[str] | None = None) -> int:
     usage_path = runs_dir / f"usage_{run_id}.jsonl"
     dataset = load_dataset(args.data_root, sample=args.cases == "sample")
     llm = LLMLayer(ledger_path=usage_path, offline=args.offline, use_cache=not args.no_cache)
-    ledger = build_ledger(dataset, extra=vision_observations(dataset, layer=llm))
-    ctx = Context(dataset, ledger, llm=llm)
+    extra = vision_observations(dataset, layer=llm)
+    if "trust-claims" in args.ablate:
+        extra += trusted_claim_observations(dataset)
+    ledger = build_ledger(dataset, extra=extra)
+    ablations = frozenset(args.ablate) | ({"ranked-accounts"} if args.ungrounded_account_steps == "ranked" else set())
+    ctx = Context(dataset, ledger, llm=llm, ablations=ablations)
     requests = [r for r in dataset.requests if not args.case or r.case_id in set(args.case)]
     rows, diagnostics = [], []
     for request in requests:

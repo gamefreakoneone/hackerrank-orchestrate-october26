@@ -30,6 +30,8 @@ python code/main.py --cases sample --out runs/sample.csv
 Flags: `--cases sample|all`, `--out PATH`, `--offline` (cache-only model calls; keyword intent marked provisional),
 `--no-cache` (skip cache reads: cold run), `--case case_NN ...` (subset, skips the full-file validator),
 `--data-root DIR` (alternative dataset directory, used by the custom evaluation overlays).
+Evaluation-only ablations (never used for the submitted output): `--ablate no-history`, `--ablate trust-claims`,
+`--ungrounded-account-steps ranked`.
 
 Each run also writes `<out>.diagnostics.jsonl` (per-case flags, account link, obligations), a usage ledger
 `runs/usage_<run_id>.jsonl` and a manifest `runs/<run_id>.manifest.json` (git revision, output checksum).
@@ -44,6 +46,7 @@ python code/tools/discovery_report.py --split all     # discovery + account link
 python code/tools/state_report.py                     # reconstructed state/proof vs samples
 python code/tools/intent_report.py runs/all.diagnostics.jsonl
 python -c "import sys;sys.path.insert(0,'code');from ghostaudit.validate import cli;cli()"   # validate ./output.csv
+python code/evaluation/make_reports.py                # evaluation/evaluation_report.md + usage_report.md
 ```
 
 ## Test

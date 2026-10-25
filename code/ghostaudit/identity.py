@@ -81,7 +81,7 @@ class Subject:
         return self.emails | self.phones | self.names | self.email_hashes | frozenset(user_ids)
 
 
-def identifier_owner_index(dataset: Dataset, audit_at) -> dict[str, set[str]]:
+def identifier_owner_index(dataset: Dataset, audit_at, include_audit: bool = True) -> dict[str, set[str]]:
     """Normalized identifier (email, phone, email hash, user id) -> user_ids, from values eligible at the cutoff:
     snapshots with updated_at <= audit_at and audit rows with event_time <= audit_at (later rows never read)."""
     owners: dict[str, set[str]] = {}
@@ -100,7 +100,7 @@ def identifier_owner_index(dataset: Dataset, audit_at) -> dict[str, set[str]]:
             add(identity.email, "email", identity.user_id)
             add(identity.phone, "phone", identity.user_id)
             add(identity.email_hash, "email_hash", identity.user_id)
-    for event in dataset.audit:
+    for event in dataset.audit if include_audit else []:
         if event.event_time > audit_at:
             break                              # audit is sorted by event_time: later rows are never read
         for value in (event.old_value, event.new_value):
@@ -108,16 +108,17 @@ def identifier_owner_index(dataset: Dataset, audit_at) -> dict[str, set[str]]:
     return owners
 
 
-def eligible_email_owner(dataset: Dataset, email: str, audit_at) -> str | None:
-    owners = identifier_owner_index(dataset, audit_at).get(normalize_email(email), set())
+def eligible_email_owner(dataset: Dataset, email: str, audit_at, include_audit: bool = True) -> str | None:
+    owners = identifier_owner_index(dataset, audit_at, include_audit).get(normalize_email(email), set())
     if len(owners) > 1:
         raise ValueError(f"email maps to several users at the cutoff: {sorted(owners)}")
     return next(iter(owners), None)
 
 
-def resolve(request: Request, dataset: Dataset) -> Subject:
+def resolve(request: Request, dataset: Dataset, use_history: bool = True) -> Subject:
+    """use_history=False is the evaluation-only 'no-history' ablation: audit-log values are ignored."""
     audit_at = request.audit_at
-    user_id = eligible_email_owner(dataset, request.email, audit_at)
+    user_id = eligible_email_owner(dataset, request.email, audit_at, include_audit=use_history)
     emails, phones, names, hashes, current_emails = set(), set(), set(), set(), set()
     flags: list[str] = []
     emails.add(normalize_email(request.email))
@@ -131,7 +132,7 @@ def resolve(request: Request, dataset: Dataset) -> Subject:
             hashes.add(identity.email_hash.lower())
         elif identity is not None:
             flags.append("IDENTITY_SNAPSHOT_AFTER_CUTOFF")
-        for event in dataset.audit:
+        for event in dataset.audit if use_history else []:
             if event.event_time > audit_at:
                 break
             if event.user_id != user_id:

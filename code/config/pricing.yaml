@@ -1,3 +1,15 @@
-# USD per 1M tokens, keyed by served model id. null = price not established; the usage report then shows the
-# cost as unavailable instead of inventing one. Fill in from the provider's published price list.
-models: {}
+# USD per 1M tokens, keyed by served model id. ESTIMATES from third-party price trackers (no official price page was
+# found for these model ids on 2026-10-25); the usage report labels every cost as an estimate. null = unknown.
+models:
+  jev-1.14.0:
+    input_per_million: 0.042
+    output_per_million: 0.0
+    source: "third-party: https://www.eesel.ai/blog/typesafe-jev-pricing , https://docs.litellm.ai/blog/typesafe_jev (output free)"
+  gpt-6-luna:
+    input_per_million: 0.10
+    output_per_million: 0.50
+    source: "third-party: https://www.azurespeed.com/AzureAiModelPricing/Models/openai-gpt-6-luna (Azure Global Standard)"
+  gemini-3.8-flash:
+    input_per_million: 0.75
+    output_per_million: 3.75
+    source: "third-party: https://anotherwrapper.com/llm-pricing/gemini-3.8-flash , https://eesel.ai/blog/gemini-3-8-flash-pricing (introductory rate)"
