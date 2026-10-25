@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -62,7 +63,10 @@ def table(rows: list[list], header: list[str]) -> str:
                       *["| " + " | ".join(map(str, r)) + " |" for r in rows]])
 
 
-def verified_artifact(directory: Path, relative_path: str, expected_sha256: str, role: str) -> Path:
+def verified_artifact(directory: Path, relative_path: str, expected_sha256: object, role: str) -> Path:
+    """The artifact's raw bytes match its declared SHA-256 (no line-ending normalization) before anything parses it."""
+    if not (isinstance(expected_sha256, str) and re.fullmatch(r"[0-9a-f]{64}", expected_sha256)):
+        fail(f"{role} has no valid recorded sha256 (got {expected_sha256!r})")
     path = directory / relative_path
     if not path.is_file():
         fail(f"{role} is missing: {path}")
@@ -71,22 +75,27 @@ def verified_artifact(directory: Path, relative_path: str, expected_sha256: str,
     return path
 
 
+FINAL_RUN_ARTIFACT_PATH_KEYS = {"output": None, "diagnostics": "diagnostics", "usage_ledger": "usage_ledger"}
+
+
 def load_final_run(manifest_path: Path, repository_root: Path) -> dict:
+    """Every final artifact (output, diagnostics, usage ledger) is hash-verified before any of them is parsed."""
     if not manifest_path.is_file():
         fail(f"final-run manifest is missing: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    output = repository_root / "output.csv"
-    if not output.is_file() or sha256_of(output) != manifest["output_sha256"]:
-        fail(f"{output} does not match the selected final run {manifest['run_id']} (sha256 differs or file missing)")
-    for role in ("diagnostics", "usage_ledger"):
-        if not (repository_root / manifest[role]).is_file():
-            fail(f"final-run {role} is missing: {repository_root / manifest[role]}")
-    output_case_ids = set(score.read_rows(output))
-    diagnostics = score.read_diagnostics(repository_root / manifest["diagnostics"])
-    if set(diagnostics) != output_case_ids:
+    run_id = manifest.get("run_id", "?")
+    verified = {}
+    for role, path_key in FINAL_RUN_ARTIFACT_PATH_KEYS.items():
+        relative_path = "output.csv" if path_key is None else manifest.get(path_key)
+        if not isinstance(relative_path, str):
+            fail(f"final run {run_id} manifest declares no {role} path")
+        verified[role] = verified_artifact(repository_root, relative_path, manifest.get(f"{role}_sha256"),
+                                           f"final run {run_id} {role}")
+    diagnostics = score.read_diagnostics(verified["diagnostics"])
+    if set(diagnostics) != set(score.read_rows(verified["output"])):
         fail("final-run diagnostics do not cover exactly the output's case ids")
-    return {"manifest": manifest, "output": output, "diagnostics": diagnostics,
-            "usage_rows": load_rows(repository_root / manifest["usage_ledger"])}
+    return {"manifest": manifest, "output": verified["output"], "diagnostics": diagnostics,
+            "usage_rows": load_rows(verified["usage_ledger"])}
 
 
 def load_evaluation_inputs(inputs_path: Path, gold: dict) -> dict:
@@ -366,10 +375,11 @@ def main(argv: list[str] | None = None) -> None:
         fail(f"evaluation inputs revision {inputs['code_revision']} != final run revision "
              f"{final['manifest']['git_revision']}; pass --allow-revision-mismatch to stage a report labelled "
              "NOT a unified release")
+    reports = {"evaluation_report.md": evaluation_report(final, inputs, gold, unified),   # render both before
+               "usage_report.md": usage_report(final)}                                     # writing either
     args.report_output_directory.mkdir(parents=True, exist_ok=True)
-    (args.report_output_directory / "evaluation_report.md").write_text(evaluation_report(final, inputs, gold, unified),
-                                                                       encoding="utf-8")
-    (args.report_output_directory / "usage_report.md").write_text(usage_report(final), encoding="utf-8")
+    for name, text in reports.items():
+        (args.report_output_directory / name).write_text(text, encoding="utf-8")
     print(f"wrote evaluation_report.md and usage_report.md to {args.report_output_directory}")
 
 

@@ -28,14 +28,14 @@ spec whose dependencies are not `Completed`.
 | 0021 | [validated-final-run-packaging](specs/0021-validated-final-run-packaging/) | Completed | 0020 | Candidate-first validated output publication and a consistent final run/report/package bundle. |
 | 0022 | [observation-time-cutoffs](specs/0022-observation-time-cutoffs/) | Completed | 0021 | Prevent future observations/identifiers/coverage from influencing earlier audits. |
 | 0023 | [unknown-copy-treatment](specs/0023-unknown-copy-treatment/) | Completed | 0022 | Keep unknown flow/restore treatment for every relevant copy; block false compliance. |
-| 0024 | [final-artifact-hash-verification](specs/0024-final-artifact-hash-verification/) | Not started | 0023 | Verify final diagnostics and usage-ledger hashes before report interpretation/rendering. |
+| 0024 | [final-artifact-hash-verification](specs/0024-final-artifact-hash-verification/) | Completed | 0023 | Verify final diagnostics and usage-ledger hashes before report interpretation/rendering. |
 | 0025 | [selected-output-configuration-guards](specs/0025-selected-output-configuration-guards/) | Not started | 0024 | Refuse non-release configurations targeting root output.csv before inference/writes. |
 
 ## Current work — correction pass 0022–0025
 
 Read [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md) and
 [review 0002](reviews/0002-corrective-pass-review.md). Work/push branch: `claude/specs-0017-0021-5s3kpe`;
-audited baseline `88a357ea152601aeca3ce5cc98e0fd764597b1c6`. **0022–0023 Completed (code fixes; release not regenerated). Next: 0024.**
+audited baseline `88a357ea152601aeca3ce5cc98e0fd764597b1c6`. **0022–0024 Completed (code fixes; release not regenerated). Next: 0025.**
 
 The targeted review confirmed one blocker and three major defects; the exhaustive audit remains unfinished.
 The saved output has future-state contamination in case_135 and case_383 and is **not approved for submission**.

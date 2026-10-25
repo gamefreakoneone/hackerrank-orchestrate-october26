@@ -1964,3 +1964,24 @@ branch=claude/specs-0017-0021-5s3kpe
 repo_root=/home/user/hackerrank-orchestrate-october26
 worktree=main
 parent_agent=none
+
+## [2026-10-25T11:47:58Z] Spec 0024: verify every final artifact hash (same turn)
+
+User Prompt (verbatim, secrets redacted):
+(same user turn as the "Spec 0022: enforce observation-time cutoffs" entry above; prompt logged there verbatim)
+
+Agent Response Summary:
+Verified 0023 on the remote (acf3b3a) and read all four 0024 files and review M2. load_final_run now hash-verifies output, diagnostics and usage ledger (declared 64-hex SHA-256 required, raw bytes) through the single verified_artifact helper before parsing; finalize_run reuses that helper and its duplicate hash loop was deleted; the report CLI renders both reports before writing either. 8 report CLI tests failed on the baseline and pass; full suite 186 passed / 2 skipped; preserved reports rebuild byte-identically; dev metrics unchanged.
+
+Actions:
+* Edited code/evaluation/make_reports.py, code/tools/finalize_run.py, code/tests/test_report_reproducibility.py, code/README.md.
+* Ran report CLI tests, packaging tests, make_reports.py rebuild into runs/corrective/0024_rebuilt + cmp, offline dev scoring before/after.
+* Updated spec 0024 status/tasks, FEATURE_STATUS.md, MORNING_REPORT.md, TECHNICAL_DESIGN.md.
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/specs-0017-0021-5s3kpe
+repo_root=/home/user/hackerrank-orchestrate-october26
+worktree=main
+parent_agent=none

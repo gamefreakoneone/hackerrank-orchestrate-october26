@@ -59,9 +59,11 @@ def bundle(tmp_path):
     manifest = {"run_id": "fixture_run", "git_revision": CODE_REVISION, "rows": 2,
                 "output_sha256": sha256_of(root / "output.csv"), "args": {"cases": "all", "no_cache": True},
                 "diagnostics": "code/evaluation/final_run/diagnostics.jsonl",
+                "diagnostics_sha256": sha256_of(final / "diagnostics.jsonl"),
                 "usage_ledger": "code/evaluation/final_run/usage_ledger.jsonl",
+                "usage_ledger_sha256": sha256_of(final / "usage_ledger.jsonl"),
                 "evaluation_inputs": "code/evaluation/fixture_bundle/evaluation_inputs.json"}
-    (final / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    write_final_manifest(root, manifest)
     inputs_dir = root / "code" / "evaluation" / "fixture_bundle"
     predictions = [(c, "INCOMPLETE", account_plan(c)[:2] if c in NOT_EXACT else account_plan(c))
                    for c in SAMPLE_CASE_IDS]
@@ -88,6 +90,17 @@ def bundle(tmp_path):
                                 "summary": "7 passed"}]}
     write_inputs(inputs_dir, inputs)
     return root, inputs_dir, inputs
+
+
+FINAL_RUN = Path("code") / "evaluation" / "final_run"
+
+
+def write_final_manifest(root: Path, manifest: dict) -> None:
+    (root / FINAL_RUN / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def read_final_manifest(root: Path) -> dict:
+    return json.loads((root / FINAL_RUN / "manifest.json").read_text(encoding="utf-8"))
 
 
 def write_inputs(inputs_dir: Path, inputs: dict) -> None:
@@ -197,4 +210,74 @@ def test_altered_selected_output_fails(bundle):
     with (root / "output.csv").open("a") as handle:
         handle.write("\n")
     completed = make_reports(root)
-    assert completed.returncode == 1 and "does not match the selected final run" in completed.stderr
+    assert completed.returncode == 1 and "fixture_run output" in completed.stderr
+    assert "does not match its recorded sha256" in completed.stderr
+
+
+# --- spec 0024: every final artifact is hash-verified before it is parsed or rendered --------------------------
+
+def alter_diagnostics_flags(root):
+    """Parseable, same case ids, different flags."""
+    path = root / FINAL_RUN / "diagnostics.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    rows[0]["flags"] = []
+    write_jsonl(path, rows)
+
+
+def alter_ledger_tokens(root):
+    path = root / FINAL_RUN / "usage_ledger.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    rows[0]["input_tokens"] += 123456
+    write_jsonl(path, rows)
+
+
+def convert_ledger_to_crlf(root):
+    path = root / FINAL_RUN / "usage_ledger.jsonl"
+    path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+
+
+def drop_declared_hash(role):
+    def drop(root):
+        manifest = read_final_manifest(root)
+        del manifest[f"{role}_sha256"]
+        write_final_manifest(root, manifest)
+    return drop
+
+
+def malform_declared_hash(root):
+    manifest = read_final_manifest(root)
+    manifest["usage_ledger_sha256"] = manifest["usage_ledger_sha256"].upper()
+    write_final_manifest(root, manifest)
+
+
+@pytest.mark.parametrize("alter,message", [
+    (alter_diagnostics_flags, "fixture_run diagnostics"),
+    (alter_ledger_tokens, "fixture_run usage_ledger"),
+    (convert_ledger_to_crlf, "fixture_run usage_ledger"),
+    (drop_declared_hash("diagnostics"), "fixture_run diagnostics has no valid recorded sha256 (got None)"),
+    (drop_declared_hash("usage_ledger"), "fixture_run usage_ledger has no valid recorded sha256 (got None)"),
+    (drop_declared_hash("output"), "fixture_run output has no valid recorded sha256 (got None)"),
+    (malform_declared_hash, "fixture_run usage_ledger has no valid recorded sha256"),
+])
+def test_final_artifact_without_a_matching_declared_hash_fails_and_leaves_reports_unchanged(bundle, alter, message):
+    root, _, _ = bundle
+    staged = root / "staged"
+    staged.mkdir()
+    for name in ("evaluation_report.md", "usage_report.md"):
+        (staged / name).write_text(f"previous {name}\n")
+    alter(root)
+    completed = make_reports(root)
+    assert completed.returncode == 1 and message in completed.stderr, completed.stderr
+    assert all((staged / name).read_text() == f"previous {name}\n"
+               for name in ("evaluation_report.md", "usage_report.md"))
+
+
+def test_refreshed_ledger_with_its_refreshed_hash_is_accepted_and_reported(bundle):
+    root, _, _ = bundle
+    alter_ledger_tokens(root)
+    manifest = read_final_manifest(root)
+    manifest["usage_ledger_sha256"] = sha256_of(root / FINAL_RUN / "usage_ledger.jsonl")
+    write_final_manifest(root, manifest)
+    completed = make_reports(root)
+    assert completed.returncode == 0, completed.stderr
+    assert str(1234 + 123456) in (root / "staged" / "usage_report.md").read_text()

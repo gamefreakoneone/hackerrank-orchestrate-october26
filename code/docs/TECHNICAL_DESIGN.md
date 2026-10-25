@@ -4,7 +4,7 @@ Binding design for the deletion-audit agent. `HANDOFF.md` is the planning brief;
 current truth. Change a Key Contract only through a spec that says so, and record it in the
 Decision log.
 
-## Next correction pass — 0022–0023 implemented; 0024–0025 planned
+## Next correction pass — 0022–0024 implemented; 0025 planned
 
 Targeted audit of `88a357e`: [reviews/0002-corrective-pass-review.md](reviews/0002-corrective-pass-review.md).
 Execution handoff: [CORRECTIVE_HANDOFF_0022_0025.md](CORRECTIVE_HANDOFF_0022_0025.md).
@@ -15,7 +15,7 @@ the implemented Key Contracts or assert that the runtime already satisfies them.
 |---|---|---|
 | 0022 (**implemented**) | Availability and meaningful observation-time cutoffs across all influence paths; no backdating future facts | case_135/case_383 and fictional future-link/snapshot regressions; distinguish component from full inference |
 | 0023 (**implemented**) | Every relevant copy participates in flow/restore treatment, including UNKNOWN treatment | Present unchecked replica cannot be hidden by compliant primary; known violations still reported |
-| 0024 | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
+| 0024 (**implemented**) | Final diagnostics and ledger hashes verified before report parsing/rendering | Wrong-hash and missing-hash fixtures fail through actual CLI; intact reports rebuild identically |
 | 0025 | Only default full canonical configuration may directly target selected output | Early sample/offline/ablation/custom-root refusals preserve old bytes; alternate destinations remain supported |
 
 Update the owning implemented Key Contracts and append a decision-log entry when each spec is actually implemented.
@@ -505,3 +505,4 @@ CHECK_RESTORE_ACCESS activity (claims; used for discovery and timeline, cited on
 | 2026-10-25 | **0021** Candidate-first publication in `main.py`; release = candidate + diagnostics + usage ledger + same-revision evaluation inputs + reports, promoted only by `finalize_run.py` after validation; producing revision = committed code checked by `uncommitted_producing_code`; hashed artifacts stored `-text`; corrected cold run `0021_candidate_20261025T104010Z` at `b90914b` selected | Review finding 5 and the CRLF checksum observation; the run is the default configuration only |
 | 2026-10-25 | **0022** Eligibility needs availability *and* observation time ≤ audit_at (`index.eligible`, one rule for discovery, account linking, category/policy selection, per-copy state, coverage and citations); the `min(observed_at, captured_at)` clipping in `timeline.observation_time`/`coverage_time` deleted in favour of `index.state_observed_at`; bundle records dated after their snapshot name no covered subject; business dates (retention_until) stay fields; parser cache 0017.2 → 0022.1 | Review B1: a FOUND row dated two days after its file's capture overrode the at-cutoff NOT_FOUND (case_135, case_383); full offline run changes exactly those two rows INCOMPLETE → COMPLETE |
 | 2026-10-25 | **0023** DISABLED / BLOCKED take every copy with presence or treatment facts; a present copy lacking an enabled / restore_allowed fact is UNKNOWN (not dropped); violations still win and are reported; any UNKNOWN copy blocks COMPLETE (`UNKNOWN_STATE`); treatment-only copy selection and the all-absent special case deleted | Review M1: a compliant primary hid an unchecked failover replica (satisfied=True, COMPLETE). Offline full run: 203 flow/backup obligations, 0 unknown copies, 0 changed rows; live PNG/vision configuration not measured |
+| 2026-10-25 | **0024** `make_reports.load_final_run` verifies output, diagnostics and usage-ledger raw bytes against the manifest's declared SHA-256 (64 lowercase hex, required) through the one `verified_artifact` helper before parsing; `finalize_run` uses the same helper for candidate files and drops its duplicate post-publication hash loop; the report CLI renders both reports before writing either | Review M2: altered-but-parseable diagnostics flags and ledger tokens were accepted with stale hashes; preserved reports still rebuild byte-identically (9,218 / 2,560 bytes) |

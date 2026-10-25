@@ -75,7 +75,9 @@ Reports are rebuilt from preserved, hashed artifacts only (no model calls, no `r
 # 1. capture evaluation inputs at a committed revision (runs the sample configurations, custom cases, discovery
 #    report and test suites; model calls come from the cache where present) -> <bundle>/evaluation_inputs.json
 python code/evaluation/capture_inputs.py --bundle-directory code/evaluation/corrective_run
-# 2. render (offline). Missing/altered/mismatched inputs exit 1. Stage elsewhere to keep the selected reports.
+# 2. render (offline). Missing/altered/mismatched inputs exit 1: the final manifest must declare a SHA-256 for
+#    output.csv, diagnostics and usage ledger, and each file's raw bytes must match it before it is read (0024).
+#    Both reports are rendered before either is written. Stage elsewhere to keep the selected reports.
 python code/evaluation/make_reports.py --evaluation-inputs code/evaluation/corrective_run/evaluation_inputs.json \
     --report-output-directory code/evaluation/corrective_run/staged_reports --allow-revision-mismatch
 ```

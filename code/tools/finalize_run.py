@@ -26,7 +26,6 @@ import make_reports  # noqa: E402
 import score  # noqa: E402
 from ghostaudit.llm.ledger import load_rows  # noqa: E402
 from ghostaudit.loaders import Dataset, load_dataset  # noqa: E402
-from ghostaudit.provenance import sha256_of  # noqa: E402
 from ghostaudit.validate import validate_output  # noqa: E402
 
 FINAL_RUN_DIRECTORY = "code/evaluation/final_run"
@@ -48,12 +47,9 @@ def checked_candidate_files(candidate: dict, dataset: Dataset, repository_root: 
         fail(f"candidate {candidate['run_id']} ran uncommitted producing code: {candidate.get('uncommitted_producing_code')}")
     if not candidate.get("published"):
         fail(f"candidate {candidate['run_id']} failed its own validation and was not published")
-    files = {role: repository_root / candidate[role] for role in ("output", "diagnostics", "usage_ledger")}
-    for role, path in files.items():
-        if not path.is_file():
-            fail(f"candidate {role} is missing: {path}")
-        if sha256_of(path) != candidate[f"{role}_sha256"]:
-            fail(f"candidate {role} {path} does not match its recorded sha256")
+    files = {role: make_reports.verified_artifact(repository_root, candidate[role], candidate.get(f"{role}_sha256"),
+                                                  f"candidate {role}")
+             for role in ("output", "diagnostics", "usage_ledger")}
     validation = validate_output(files["output"], dataset, files["diagnostics"])
     if not validation.ok:
         fail(f"candidate fails validation with its diagnostics: {validation.errors[:5]}")
@@ -111,10 +107,7 @@ def finalize(candidate_manifest_path: Path, evaluation_inputs_path: Path, reposi
     except OSError as error:
         fail(f"publication of {run_id} was interrupted ({error}); previous final_run kept at {previous}, staged files "
              f"at {staging}; the last committed release is the recovery point")
-    published = make_reports.load_final_run(final_run_directory / "manifest.json", repository_root)
-    for role in ("diagnostics", "usage_ledger"):
-        if sha256_of(repository_root / selected_manifest[role]) != selected_manifest[f"{role}_sha256"]:
-            fail(f"published {role} does not match the candidate's sha256")
+    published = make_reports.load_final_run(final_run_directory / "manifest.json", repository_root)  # hash-verified
     rerendered = {"evaluation_report.md": make_reports.evaluation_report(published, inputs, gold, unified=True),
                   "usage_report.md": make_reports.usage_report(published)}
     if any((final_run_directory.parent / name).read_text(encoding="utf-8") != text for name, text in rerendered.items()):
